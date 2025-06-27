@@ -1,5 +1,6 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+#[derive(Debug, Copy, Clone)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -15,6 +16,14 @@ impl Vec3 {
         }
     }
 
+    pub fn one() -> Self {
+        Self {
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+        }
+    }
+
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
@@ -27,13 +36,14 @@ impl Vec3 {
         self.length_squared().sqrt()
     }
 
-    fn to_u64(&self) -> (u64, u64, u64) {
+    pub fn to_u64(self) -> (u64, u64, u64) {
         let x = (self.x * 255.999) as u64;
         let y = (self.y * 255.999) as u64;
         let z = (self.z * 255.999) as u64;
         (x, y, z)
     }
 
+    // for ppm version
     pub fn get_color_string(&self) -> String {
         let xyz = self.to_u64();
         format!("{} {} {}\n", xyz.0, xyz.1, xyz.2)
@@ -51,9 +61,8 @@ impl Vec3 {
         }
     }
 
-    pub fn unit_vector(&self) -> Self {
-        let len = self.length();
-        Vec3::new(self.x / len, self.y / len, self.z / len)
+    pub fn unit_vector(v: Self) -> Self {
+        v / v.length()
     }
 }
 
@@ -133,6 +142,17 @@ impl Mul for Vec3 {
     }
 }
 
+impl Mul<Vec3> for f64 {
+    type Output = Vec3;
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        Vec3 {
+            x: rhs.x * self,
+            y: rhs.y * self,
+            z: rhs.z * self,
+        }
+    }
+}
+
 impl MulAssign<f64> for Vec3 {
     fn mul_assign(&mut self, rhs: f64) {
         *self = Self {
@@ -163,3 +183,5 @@ impl Div<f64> for Vec3 {
         }
     }
 }
+
+pub type Color = Vec3;
