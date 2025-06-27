@@ -8,7 +8,31 @@ use console::style;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 
+fn hit_sphere(center: Vec3, radius: f64, r: Ray) -> bool {
+    // 公式中的 （A - C)
+    let oc = r.origin - center;
+
+    // 公式中第1项的 b*b
+    let a = Vec3::dot(r.direction, r.direction);
+
+    // 公式中第2项的内容，忽略 t
+    let b = 2.0 * Vec3::dot(oc, r.direction);
+
+    // 公式中的 (A - C) * (A - C) - r^2
+    let c = Vec3::dot(oc, oc) - radius * radius;
+
+    // 计算出了 a, b, c，判断 b^2 - 4ac 解的个数
+    let result = b * b - 4.0 * a * c;
+
+    // 解的个数 >= 0，则打到了圆
+    result >= 0.0
+}
+
 fn ray_color(r: Ray) -> Color {
+    if hit_sphere(Vec3::new(0.0, 0.0, -1.0), 0.5, r) {
+        return Color::new(1.0, 0.0, 0.0);
+    }
+
     let unit_direction = Vec3::unit_vector(r.direction);
 
     let t = 0.5 * (unit_direction.y + 1.0);
@@ -17,7 +41,7 @@ fn ray_color(r: Ray) -> Color {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image2.png");
+    let path = std::path::Path::new("output/book1/image3.png");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
