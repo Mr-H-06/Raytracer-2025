@@ -36,33 +36,10 @@ impl Vec3 {
         self.length_squared().sqrt()
     }
 
-    pub fn to_u64(self) -> (u64, u64, u64) {
-        let x = (self.x * 255.999) as u64;
-        let y = (self.y * 255.999) as u64;
-        let z = (self.z * 255.999) as u64;
-        (x, y, z)
-    }
-
     // for ppm version
     pub fn get_color_string(&self) -> String {
         let xyz = self.to_u64();
         format!("{} {} {}\n", xyz.0, xyz.1, xyz.2)
-    }
-
-    pub fn dot(u: Vec3, v: Vec3) -> f64 {
-        u.x * v.x + u.y * v.y + u.z * v.z
-    }
-
-    pub fn cross(u: Vec3, v: Vec3) -> Self {
-        Self {
-            x: u.y * v.z - u.z * v.y,
-            y: u.z * v.x - u.x * v.z,
-            z: u.x * v.y - u.y * v.x,
-        }
-    }
-
-    pub fn unit_vector(v: Self) -> Self {
-        v / v.length()
     }
 }
 
@@ -184,4 +161,20 @@ impl Div<f64> for Vec3 {
     }
 }
 
-pub type Color = Vec3;
+pub type Point3 = Vec3;
+
+pub fn dot(u: Vec3, v: Vec3) -> f64 {
+    u.x * v.x + u.y * v.y + u.z * v.z
+}
+
+pub fn cross(u: Vec3, v: Vec3) -> Vec3 {
+    Vec3 {
+        x: u.y * v.z - u.z * v.y,
+        y: u.z * v.x - u.x * v.z,
+        z: u.x * v.y - u.y * v.x,
+    }
+}
+
+pub fn unit_vector(v: Vec3) -> Vec3 {
+    v / v.length()
+}

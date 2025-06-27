@@ -1,40 +1,36 @@
 #![allow(dead_code)]
+pub mod color;
+pub mod hittable;
 mod ray;
-mod vec3;
+pub mod sphere;
+pub mod vec3;
+
+use color::Color;
 use ray::Ray;
-use vec3::{Color, Vec3};
+use vec3::{Point3, Vec3};
 
 use console::style;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 
-fn hit_sphere(center: Vec3, radius: f64, r: Ray) -> f64 {
-    // 公式中的(A-C)
-    let oc = r.origin - center;
-
-    // 公式中第1项的b*b
-    let a = Vec3::dot(r.direction, r.direction);
-
-    // 公式中第2项的内容，忽略t
-    let b = 2.0 * Vec3::dot(oc, r.direction);
-
-    // 公式中的(A-C)*(A-C)-r^2
-    let c = Vec3::dot(oc, oc) - radius * radius;
-
-    // 计算出了a,b,c，判断b^2-4ac解的个数
-    let result = b * b - 4.0 * a * c;
+fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
+    let oc = center - r.origin;
+    let a = r.direction().length_squared();
+    let h = vec3::dot(r.direction, oc);
+    let c = oc.length_squared() - radius * radius;
+    let result = h * h - a * c;
 
     if result < 0.0 {
         -1.0
     } else {
-        (-b - result.sqrt()) / (2.0 * a)
+        (h - result.sqrt()) / a
     }
 }
 
 fn ray_color(r: Ray) -> Color {
     let t = hit_sphere(Vec3::new(0.0, 0.0, -1.0), 0.5, r);
     if t > 0.0 {
-        let unit_vector = Vec3::unit_vector(r.at(t) - Vec3::new(0.0, 0.0, -1.0));
+        let unit_vector = vec3::unit_vector(r.at(t) - Vec3::new(0.0, 0.0, -1.0));
         return 0.5
             * Color::new(
                 unit_vector.x + 1.0,
@@ -43,7 +39,7 @@ fn ray_color(r: Ray) -> Color {
             );
     }
 
-    let unit_direction = Vec3::unit_vector(r.direction);
+    let unit_direction = vec3::unit_vector(r.direction);
 
     let t = 0.5 * (unit_direction.y + 1.0);
 
