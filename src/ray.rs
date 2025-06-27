@@ -5,6 +5,15 @@ pub struct Ray {
     pub direction: Vec3,
 }
 
+impl Default for Ray {
+    fn default() -> Self {
+        Self {
+            origin: Vec3::default(),
+            direction: Vec3::default(),
+        }
+    }
+}
+
 impl Ray {
     pub fn new(origin: Point3, direction: Vec3) -> Self {
         Self { origin, direction }

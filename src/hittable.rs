@@ -1,6 +1,7 @@
 use super::ray::Ray;
 use super::vec3::{self, Point3, Vec3};
 
+#[derive(Clone)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
@@ -23,5 +24,14 @@ impl HitRecord {
         } else {
             -outward_normal
         };
+    }
+
+    pub fn default() -> Self {
+        HitRecord {
+            p: Point3::default(),
+            normal: Vec3::new(0.0, 1.0, 0.0),
+            t: 0.0,
+            front_face: false,
+        }
     }
 }

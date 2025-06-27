@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 pub mod color;
 pub mod hittable;
+mod hittable_list;
 mod ray;
 pub mod sphere;
 pub mod vec3;

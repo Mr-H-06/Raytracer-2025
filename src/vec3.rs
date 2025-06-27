@@ -7,6 +7,16 @@ pub struct Vec3 {
     pub z: f64,
 }
 
+impl Default for Vec3 {
+    fn default() -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        }
+    }
+}
+
 impl Vec3 {
     pub fn zero() -> Self {
         Self {
@@ -99,7 +109,7 @@ impl SubAssign for Vec3 {
 
 impl Mul<f64> for Vec3 {
     type Output = Self;
-    fn mul(self, rhs: f64) -> Self {
+    fn mul(self, rhs: f64) -> Self::Output {
         Self {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -110,7 +120,7 @@ impl Mul<f64> for Vec3 {
 
 impl Mul for Vec3 {
     type Output = Self;
-    fn mul(self, rhs: Self) -> Self {
+    fn mul(self, rhs: Self) -> Self::Output {
         Self {
             x: self.x * rhs.x,
             y: self.y * rhs.y,
@@ -121,7 +131,7 @@ impl Mul for Vec3 {
 
 impl Mul<Vec3> for f64 {
     type Output = Vec3;
-    fn mul(self, rhs: Vec3) -> Vec3 {
+    fn mul(self, rhs: Vec3) -> Self::Output {
         Vec3 {
             x: rhs.x * self,
             y: rhs.y * self,
@@ -152,7 +162,7 @@ impl DivAssign<f64> for Vec3 {
 
 impl Div<f64> for Vec3 {
     type Output = Self;
-    fn div(self, rhs: f64) -> Self {
+    fn div(self, rhs: f64) -> Self::Output {
         Self {
             x: self.x / rhs,
             y: self.y / rhs,
