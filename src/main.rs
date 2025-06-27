@@ -23,21 +23,26 @@ fn hit_sphere(center: Vec3, radius: f64, r: Ray) -> f64 {
 
     // 计算出了a,b,c，判断b^2-4ac解的个数
     let result = b * b - 4.0 * a * c;
-    
-    if result < 0.0{
-        return  -1.0;
-    } else{
-        return (-b - result.sqrt()) / (2.0 * a);
+
+    if result < 0.0 {
+        -1.0
+    } else {
+        (-b - result.sqrt()) / (2.0 * a)
     }
 }
 
 fn ray_color(r: Ray) -> Color {
     let t = hit_sphere(Vec3::new(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0{
+    if t > 0.0 {
         let unit_vector = Vec3::unit_vector(r.at(t) - Vec3::new(0.0, 0.0, -1.0));
-        return 0.5 * Color::new(unit_vector.x + 1.0, unit_vector.y + 1.0, unit_vector.z + 1.0);
+        return 0.5
+            * Color::new(
+                unit_vector.x + 1.0,
+                unit_vector.y + 1.0,
+                unit_vector.z + 1.0,
+            );
     }
-    
+
     let unit_direction = Vec3::unit_vector(r.direction);
 
     let t = 0.5 * (unit_direction.y + 1.0);
