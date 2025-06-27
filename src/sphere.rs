@@ -1,4 +1,4 @@
-use super::vec3::{self, Point3, Vec3};
+use super::vec3::{self, Point3};
 
 use super::hittable::{HitRecord, Hittable};
 use super::ray::Ray;

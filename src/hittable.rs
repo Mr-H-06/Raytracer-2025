@@ -25,8 +25,10 @@ impl HitRecord {
             -outward_normal
         };
     }
+}
 
-    pub fn default() -> Self {
+impl Default for HitRecord {
+    fn default() -> Self {
         HitRecord {
             p: Point3::default(),
             normal: Vec3::new(0.0, 1.0, 0.0),

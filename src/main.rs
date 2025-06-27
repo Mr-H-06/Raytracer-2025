@@ -1,43 +1,29 @@
 #![allow(dead_code)]
 pub mod color;
 pub mod hittable;
-mod hittable_list;
-mod ray;
+pub mod hittable_list;
+pub mod ray;
+pub mod rtweekend;
 pub mod sphere;
 pub mod vec3;
 
+use std::rc::Rc;
+
 use color::Color;
+use hittable::{HitRecord, Hittable};
+use hittable_list::HittableList;
 use ray::Ray;
+use sphere::Sphere;
 use vec3::{Point3, Vec3};
 
 use console::style;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 
-fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
-    let oc = center - r.origin;
-    let a = r.direction().length_squared();
-    let h = vec3::dot(r.direction, oc);
-    let c = oc.length_squared() - radius * radius;
-    let result = h * h - a * c;
-
-    if result < 0.0 {
-        -1.0
-    } else {
-        (h - result.sqrt()) / a
-    }
-}
-
-fn ray_color(r: Ray) -> Color {
-    let t = hit_sphere(Vec3::new(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0 {
-        let unit_vector = vec3::unit_vector(r.at(t) - Vec3::new(0.0, 0.0, -1.0));
-        return 0.5
-            * Color::new(
-                unit_vector.x + 1.0,
-                unit_vector.y + 1.0,
-                unit_vector.z + 1.0,
-            );
+fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    let mut rec = HitRecord::default();
+    if world.hit(r, 0.0, rtweekend::INFINITY, &mut rec) {
+        return 0.5 * (rec.normal + Color::one());
     }
 
     let unit_direction = vec3::unit_vector(r.direction);
@@ -49,44 +35,55 @@ fn ray_color(r: Ray) -> Color {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image4.png");
+    let path = std::path::Path::new("output/book1/image5.png");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
     // Image config
     const ASPECT_RATIO: f64 = 16.0 / 9.0;
-    let width: u32 = 400;
-    let height: u32 = ((width as f64) / ASPECT_RATIO) as u32;
+    let image_width: u32 = 400;
+    let image_height: u32 = ((image_width as f64) / ASPECT_RATIO) as u32;
+    let image_height = if image_height < 1 { 1 } else { image_height };
+
+    // World
+    let mut world = HittableList::default();
+    world.add(Rc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), -0.5)));
+    world.add(Rc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
 
     // Camera config
+    let focal_length = 1.0;
     let viewport_height = 2.0;
     let viewport_width = ASPECT_RATIO * viewport_height;
-    let focal_length = 1.0;
+    let camera_center = Vec3::zero();
 
-    let origin = Vec3::zero();
-    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, -viewport_height, 0.0);
-    let lower_left_corner =
-        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+    let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
+    let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
+
+    let pixel_delta_u = viewport_u / image_width as f64;
+    let pixel_delta_v = viewport_v / image_height as f64;
+
+    let viewport_upper_left =
+        camera_center - viewport_u / 2.0 - viewport_v / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+    let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
     // different from the book, we use image crate to create a .png image rather than outputting .ppm file, which is not widely used.
     // anyway, you may output any image format you like.
-    let mut img: RgbImage = ImageBuffer::new(width, height);
+    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
     let progress = if option_env!("CI").unwrap_or_default() == "true" {
         ProgressBar::hidden()
     } else {
-        ProgressBar::new((height * width) as u64)
+        ProgressBar::new((image_height * image_width) as u64)
     };
 
-    for j in (0..height).rev() {
-        for i in 0..width {
+    for j in 0..image_height {
+        for i in 0..image_width {
             let pixel = img.get_pixel_mut(i, j);
-            let u: f64 = (i as f64) / ((width - 1) as f64);
-            let v: f64 = (j as f64) / ((height - 1) as f64);
-            let direction = lower_left_corner + u * horizontal + v * vertical - origin;
-            let ray = Ray::new(origin, direction);
-            let color = ray_color(ray).to_u64();
+            //let u: f64 = (i as f64) / ((width - 1) as f64);
+            //let v: f64 = (j as f64) / ((height - 1) as f64);
+            let ray_direction = pixel00_loc + i as f64 * pixel_delta_u + j as f64 * pixel_delta_v;
+            let r = Ray::new(camera_center, ray_direction);
+            let color = ray_color(&r, &world).to_u64();
             *pixel = image::Rgb([color.0 as u8, color.1 as u8, color.2 as u8]);
         }
         progress.inc(1);
