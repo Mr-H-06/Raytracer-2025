@@ -47,12 +47,6 @@ impl Vec3 {
         self.length_squared().sqrt()
     }
 
-    // for ppm version
-    pub fn get_color_string(&self) -> String {
-        let xyz = self.to_u64();
-        format!("{} {} {}\n", xyz.0, xyz.1, xyz.2)
-    }
-
     pub fn random() -> Self {
         Self {
             x: random_double(),
