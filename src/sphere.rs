@@ -1,4 +1,5 @@
 use super::vec3::{self, Point3};
+use crate::interval::Interval;
 
 use super::hittable::{HitRecord, Hittable};
 use super::ray::Ray;
@@ -15,7 +16,7 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, ray_t: &Interval, hit_record: &mut HitRecord) -> bool {
         let oc = self.center - r.origin();
         let a = r.direction().length_squared();
         let h = vec3::dot(r.direction(), oc);
@@ -28,9 +29,9 @@ impl Hittable for Sphere {
         let sqrtd = discriminant.sqrt();
 
         let mut root = (h - sqrtd) / a;
-        if root <= ray_tmin || ray_tmax <= root {
+        if root <= ray_t.min || ray_t.max <= root {
             root = (h + sqrtd) / a;
-            if root <= ray_tmin || ray_tmax <= root {
+            if root <= ray_t.min || ray_t.max <= root {
                 return false;
             }
         }
