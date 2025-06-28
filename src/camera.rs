@@ -25,7 +25,7 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book1/image8.png");
+        let path = std::path::Path::new("output/book1/image9.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -98,7 +98,7 @@ impl Camera {
             return Color::default();
         }
 
-        if world.hit(r, &Interval::new(0.0, rtweekend::INFINITY), &mut rec) {
+        if world.hit(r, &Interval::new(0.001, rtweekend::INFINITY), &mut rec) {
             let direction = vec3::random_on_hemisphere(rec.normal);
             return 0.5 * Self::ray_color(&Ray::new(rec.p, direction), depth - 1, world);
         }
