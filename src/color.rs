@@ -35,9 +35,9 @@ impl Color {
         let g = scale * g;
         let b = scale * b;
 
-        let r = linear_to_gamma(r);
-        let g = linear_to_gamma(g);
-        let b = linear_to_gamma(b);
+        //let r = linear_to_gamma(r);
+        //let g = linear_to_gamma(g);
+        //let b = linear_to_gamma(b);
 
         Rgb([
             (256.0 * INTENSITY.clamp(r)) as u8,
