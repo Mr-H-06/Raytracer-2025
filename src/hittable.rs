@@ -1,11 +1,15 @@
+use std::rc::Rc;
+
+use super::material::Material;
 use super::ray::Ray;
 use super::vec3::{self, Point3, Vec3};
 use crate::interval::Interval;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
+    pub mat: Option<Rc<dyn Material>>,
     pub t: f64,
     pub front_face: bool,
 }
@@ -25,16 +29,5 @@ impl HitRecord {
         } else {
             -outward_normal
         };
-    }
-}
-
-impl Default for HitRecord {
-    fn default() -> Self {
-        HitRecord {
-            p: Point3::default(),
-            normal: Vec3::new(0.0, 1.0, 0.0),
-            t: 0.0,
-            front_face: false,
-        }
     }
 }
