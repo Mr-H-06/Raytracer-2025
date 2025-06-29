@@ -21,10 +21,14 @@ fn main() {
     // World
     let mut world = HittableList::default();
 
-    let material_ground = Rc::new(material::Lambertian::new(color::Color::new(0.8, 0.8, 0.0)));
-    let material_center = Rc::new(material::Lambertian::new(color::Color::new(0.1, 0.2, 0.5)));
-    let material_left = Rc::new(material::Dielectric::new(1.00 / 1.33));
-    let material_right = Rc::new(material::Metal::new(color::Color::new(0.8, 0.6, 0.2), 1.0));
+    let material_ground: Rc<dyn material::Material> =
+        Rc::new(material::Lambertian::new(color::Color::new(0.8, 0.8, 0.0)));
+    let material_center: Rc<dyn material::Material> =
+        Rc::new(material::Lambertian::new(color::Color::new(0.1, 0.2, 0.5)));
+    let material_left: Rc<dyn material::Material> = Rc::new(material::Dielectric::new(1.5));
+    let material_bubble: Rc<dyn material::Material> = Rc::new(material::Dielectric::new(1.0 / 1.5));
+    let material_right: Rc<dyn material::Material> =
+        Rc::new(material::Metal::new(color::Color::new(0.8, 0.6, 0.2), 1.0));
 
     world.add(Rc::new(Sphere::new(
         Point3::new(0.0, -100.5, -1.0),
@@ -32,7 +36,7 @@ fn main() {
         material_ground,
     )));
     world.add(Rc::new(Sphere::new(
-        Point3::new(0.0, 0.0, -1.0),
+        Point3::new(0.0, 0.0, -1.2),
         0.5,
         material_center,
     )));
@@ -40,6 +44,11 @@ fn main() {
         Point3::new(-1.0, 0.0, -1.0),
         0.5,
         material_left,
+    )));
+    world.add(Rc::new(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.4,
+        material_bubble,
     )));
     world.add(Rc::new(Sphere::new(
         Point3::new(1.0, 0.0, -1.0),
