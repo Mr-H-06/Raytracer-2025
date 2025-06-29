@@ -18,6 +18,8 @@ pub struct Camera {
     pub lookfrom: Point3,
     pub lookat: Point3,
     pub vup: Vec3,
+    pub defocus_angle: f64,
+    pub focus_dist: f64,
     image_height: u32,
     center: Point3,
     pixel00_loc: Point3,
@@ -26,13 +28,15 @@ pub struct Camera {
     u: Vec3,
     v: Vec3,
     w: Vec3,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
 }
 
 impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book1/image21.png");
+        let path = std::path::Path::new("output/book1/image22.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -80,10 +84,9 @@ impl Camera {
         self.center = self.lookfrom;
 
         // 确认视口的大小。
-        let focal_length = (self.lookfrom - self.lookat).length();
         let theta = rtweekend::degrees_to_radians(self.vfov);
         let h = (theta / 2.0).tan();
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * h * self.focus_dist;
         let viewport_width = viewport_height * (self.image_width as f64 / self.image_height as f64);
 
         self.w = vec3::unit_vector(self.lookfrom - self.lookat);
@@ -100,8 +103,12 @@ impl Camera {
 
         // 计算左上角像素的位置。
         let viewport_upper_left =
-            self.center - (focal_length * self.w) - (0.5 * viewport_u) - (0.5 * viewport_v);
+            self.center - (self.focus_dist * self.w) - (0.5 * viewport_u) - (0.5 * viewport_v);
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
+        let defocus_radius =
+            self.focus_dist * (rtweekend::degrees_to_radians(self.defocus_angle / 2.0)).tan();
+        self.defocus_disk_u = self.u * defocus_radius;
+        self.defocus_disk_v = self.v * defocus_radius;
     }
 
     fn ray_color(r: &Ray, depth: i32, world: &dyn Hittable) -> Color {
@@ -131,7 +138,12 @@ impl Camera {
         let pixel_center =
             self.pixel00_loc + i as f64 * self.pixel_delta_u + j as f64 * self.pixel_delta_v;
         let pixel_sample = pixel_center + self.pixel_sample_square();
-        let ray_origin = self.center;
+
+        let ray_origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
         let ray_direction = pixel_sample - ray_origin;
         Ray::new(ray_origin, ray_direction)
     }
@@ -140,6 +152,11 @@ impl Camera {
         let px = -0.5 + rtweekend::random_double();
         let py = -0.5 + rtweekend::random_double();
         px * self.pixel_delta_u + py * self.pixel_delta_v
+    }
+
+    fn defocus_disk_sample(&self) -> Point3 {
+        let p = vec3::random_in_unit_disk();
+        self.center + p.x * self.defocus_disk_u + p.y * self.defocus_disk_v
     }
 }
 
@@ -155,6 +172,8 @@ impl Default for Camera {
             lookfrom: Point3::new(0.0, 0.0, -1.0),
             lookat: Point3::new(0.0, 0.0, 0.0),
             vup: Vec3::new(0.0, 1.0, 0.0),
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
             center: Point3::default(),
             pixel00_loc: Point3::default(),
             pixel_delta_u: Vec3::default(),
@@ -162,6 +181,8 @@ impl Default for Camera {
             u: Vec3::default(),
             v: Vec3::default(),
             w: Vec3::default(),
+            defocus_disk_u: Vec3::default(),
+            defocus_disk_v: Vec3::default(),
         }
     }
 }
