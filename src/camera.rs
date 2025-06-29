@@ -10,23 +10,29 @@ use super::rtweekend;
 use super::vec3::{self, Point3, Vec3};
 
 pub struct Camera {
-    pub aspect_ratio: f64,        // Ratio of image width over height
-    pub image_width: u32,         // Rendered image width in pixel count
-    pub samples_per_pixel: usize, // Count of random samples for each pixel
+    pub aspect_ratio: f64,
+    pub image_width: u32,
+    pub samples_per_pixel: usize,
     pub max_depth: i32,
     pub vfov: f64,
-    image_height: u32,   // Rendered image height
-    center: Point3,      // Camera center
-    pixel00_loc: Point3, // Location of pixel 0, 0
-    pixel_delta_u: Vec3, // Offset to pixel to the right
-    pixel_delta_v: Vec3, // Offset to pixel below
+    pub lookfrom: Point3,
+    pub lookat: Point3,
+    pub vup: Vec3,
+    image_height: u32,
+    center: Point3,
+    pixel00_loc: Point3,
+    pixel_delta_u: Vec3,
+    pixel_delta_v: Vec3,
+    u: Vec3,
+    v: Vec3,
+    w: Vec3,
 }
 
 impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book1/image19.png");
+        let path = std::path::Path::new("output/book1/image20.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -71,18 +77,22 @@ impl Camera {
             self.image_height
         };
 
-        self.center = Point3::default();
+        self.center = self.lookfrom;
 
         // 确认视口的大小。
-        let focal_length = 1.0;
+        let focal_length = (self.lookfrom - self.lookat).length();
         let theta = rtweekend::degrees_to_radians(self.vfov);
         let h = (theta / 2.0).tan();
         let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (self.image_width as f64 / self.image_height as f64);
 
+        self.w = vec3::unit_vector(self.lookfrom - self.lookat);
+        self.u = vec3::unit_vector(vec3::cross(self.vup, self.w));
+        self.v = vec3::cross(self.w, self.u);
+
         // 计算水平和垂直视口边缘上的向量。
-        let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
+        let viewport_u = self.u * viewport_width;
+        let viewport_v = -self.v * viewport_height;
 
         // 计算从像素到像素的水平和垂直增量向量。
         self.pixel_delta_u = viewport_u / self.image_width as f64;
@@ -90,7 +100,7 @@ impl Camera {
 
         // 计算左上角像素的位置。
         let viewport_upper_left =
-            self.center - Vec3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
+            self.center - (focal_length * self.w) - (0.5 * viewport_u) - (0.5 * viewport_v);
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
@@ -142,10 +152,16 @@ impl Default for Camera {
             samples_per_pixel: 10,
             max_depth: 10,
             vfov: 90.0,
+            lookfrom: Point3::new(0.0, 0.0, -1.0),
+            lookat: Point3::new(0.0, 0.0, 0.0),
+            vup: Vec3::new(0.0, 1.0, 0.0),
             center: Point3::default(),
             pixel00_loc: Point3::default(),
             pixel_delta_u: Vec3::default(),
             pixel_delta_v: Vec3::default(),
+            u: Vec3::default(),
+            v: Vec3::default(),
+            w: Vec3::default(),
         }
     }
 }
