@@ -1,22 +1,34 @@
 use std::rc::Rc;
 
-use super::vec3::{self, Point3};
-use crate::interval::Interval;
-
 use super::hittable::{HitRecord, Hittable};
 use super::material::Material;
 use super::ray::Ray;
+use super::vec3::{self, Point3, Vec3};
+use crate::interval::Interval;
 
 pub struct Sphere {
-    center: Point3,
+    center: Ray,
     radius: f64,
     mat: Rc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, material: Rc<dyn Material>) -> Self {
+    pub fn new(static_center: Point3, radius: f64, material: Rc<dyn Material>) -> Self {
         Self {
-            center,
+            center: Ray::new(static_center, Vec3::zero()),
+            radius,
+            mat: material,
+        }
+    }
+
+    pub fn new_with_center2(
+        center1: Point3,
+        center2: Point3,
+        radius: f64,
+        material: Rc<dyn Material>,
+    ) -> Self {
+        Self {
+            center: Ray::new(center1, center2 - center1),
             radius,
             mat: material,
         }
@@ -25,7 +37,8 @@ impl Sphere {
 
 impl Hittable for Sphere {
     fn hit(&self, r: &Ray, ray_t: &Interval, hit_record: &mut HitRecord) -> bool {
-        let oc = self.center - r.origin();
+        let current_center = self.center.at(r.time());
+        let oc = current_center - r.origin();
         let a = r.direction().length_squared();
         let h = vec3::dot(r.direction(), oc);
         let c = oc.length_squared() - self.radius * self.radius;
@@ -46,7 +59,7 @@ impl Hittable for Sphere {
 
         hit_record.t = root;
         hit_record.p = r.at(hit_record.t);
-        let outward_normal = (hit_record.p - self.center) / self.radius;
+        let outward_normal = (hit_record.p - current_center) / self.radius;
         hit_record.set_face_normal(r, outward_normal);
         hit_record.mat = Some(Rc::clone(&self.mat));
 

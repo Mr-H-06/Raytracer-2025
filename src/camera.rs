@@ -36,7 +36,7 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book1/image23.png");
+        let path = std::path::Path::new("output/book2/image1.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -145,7 +145,9 @@ impl Camera {
             self.defocus_disk_sample()
         };
         let ray_direction = pixel_sample - ray_origin;
-        Ray::new(ray_origin, ray_direction)
+        let ray_time = rtweekend::random_double();
+
+        Ray::new_with_time(ray_origin, ray_direction, ray_time)
     }
 
     fn pixel_sample_square(&self) -> Vec3 {

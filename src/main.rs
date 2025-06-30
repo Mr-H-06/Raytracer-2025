@@ -13,6 +13,7 @@ pub mod vec3;
 use std::rc::Rc;
 
 use crate::camera::Camera;
+use crate::vec3::Vec3;
 use color::Color;
 use hittable_list::HittableList;
 use material::{Dielectric, Lambertian, Material, Metal};
@@ -23,8 +24,7 @@ fn main() {
     // World
     let mut world = HittableList::default();
 
-    let ground_material: Rc<dyn Material> =
-        Rc::new(Lambertian::new(color::Color::new(0.5, 0.5, 0.5)));
+    let ground_material: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
     world.add(Rc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -41,7 +41,10 @@ fn main() {
             );
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                let mut center2 = center;
                 let sphere_material: Rc<dyn Material> = if choose_mat < 0.8 {
+                    center2 =
+                        center + Vec3::new(0.0, rtweekend::random_double_range(0.0, 0.5), 0.0);
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     Rc::new(Lambertian::new(albedo))
@@ -54,8 +57,12 @@ fn main() {
                     // glass
                     Rc::new(Dielectric::new(1.5))
                 };
-
-                world.add(Rc::new(Sphere::new(center, 0.2, sphere_material)));
+                world.add(Rc::new(Sphere::new_with_center2(
+                    center,
+                    center2,
+                    0.2,
+                    sphere_material,
+                )));
             }
         }
     }
@@ -84,14 +91,14 @@ fn main() {
     // Camera
     let mut cam = Camera::default();
     cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 1200;
-    cam.samples_per_pixel = 500;
+    cam.image_width = 400;
+    cam.samples_per_pixel = 100;
     cam.max_depth = 50;
 
     cam.vfov = 20.0;
     cam.lookfrom = Point3::new(13.0, 2.0, 3.0);
     cam.lookat = Point3::new(0.0, 0.0, 0.0);
-    cam.vup = vec3::Vec3::new(0.0, 1.0, 0.0);
+    cam.vup = Vec3::new(0.0, 1.0, 0.0);
 
     cam.defocus_angle = 0.6;
     cam.focus_dist = 10.0;
