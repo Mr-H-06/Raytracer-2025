@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+pub mod aabb;
+pub mod bvh;
 pub mod camera;
 pub mod color;
 pub mod hittable;
@@ -8,11 +10,14 @@ pub mod material;
 pub mod ray;
 pub mod rtweekend;
 pub mod sphere;
+pub mod texture;
 pub mod vec3;
 
 use std::rc::Rc;
 
+use crate::bvh::BvhNode;
 use crate::camera::Camera;
+use crate::texture::{CheckerTexture, Texture};
 use crate::vec3::Vec3;
 use color::Color;
 use hittable_list::HittableList;
@@ -24,7 +29,13 @@ fn main() {
     // World
     let mut world = HittableList::default();
 
-    let ground_material: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    let checker: Rc<dyn Texture> = Rc::new(CheckerTexture::new_with_color(
+        0.32,
+        Color::new(0.2, 0.3, 0.1),
+        Color::new(0.9, 0.9, 0.9),
+    ));
+    let ground_material: Rc<dyn Material> =
+        Rc::new(Lambertian::new_with_texture(Rc::clone(&checker)));
     world.add(Rc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -87,6 +98,8 @@ fn main() {
         1.0,
         material3,
     )));
+
+    let world = HittableList::from_object(Rc::new(BvhNode::new(&mut world)));
 
     // Camera
     let mut cam = Camera::default();

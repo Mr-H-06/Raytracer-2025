@@ -1,24 +1,25 @@
 use super::hittable::{HitRecord, Hittable};
+use super::ray::Ray;
+use crate::aabb::Aabb;
 use crate::interval::Interval;
 use std::rc::Rc;
-
-use super::ray::Ray;
 
 #[derive(Default)]
 pub struct HittableList {
     pub objects: Vec<Rc<dyn Hittable>>,
+
+    bbox: Aabb,
 }
 
 impl HittableList {
     pub fn new() -> Self {
-        Self {
-            objects: Vec::new(),
-        }
+        HittableList::default()
     }
 
     pub fn from_object(object: Rc<dyn Hittable>) -> Self {
         Self {
             objects: vec![object],
+            bbox: Aabb::default(),
         }
     }
 
@@ -27,6 +28,7 @@ impl HittableList {
     }
 
     pub fn add(&mut self, object: Rc<dyn Hittable>) {
+        self.bbox = Aabb::new_with_box(&self.bbox, object.bounding_box());
         self.objects.push(object);
     }
 }
@@ -46,5 +48,9 @@ impl Hittable for HittableList {
         }
 
         hit_anything
+    }
+
+    fn bounding_box(&self) -> &Aabb {
+        &self.bbox
     }
 }

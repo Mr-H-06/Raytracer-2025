@@ -1,23 +1,28 @@
-use std::rc::Rc;
-
 use super::hittable::{HitRecord, Hittable};
 use super::material::Material;
 use super::ray::Ray;
 use super::vec3::{self, Point3, Vec3};
+use crate::aabb::Aabb;
 use crate::interval::Interval;
+use std::rc::Rc;
 
 pub struct Sphere {
     center: Ray,
     radius: f64,
     mat: Rc<dyn Material>,
+
+    bbox: Aabb,
 }
 
 impl Sphere {
     pub fn new(static_center: Point3, radius: f64, material: Rc<dyn Material>) -> Self {
+        let rvec = Vec3::new(radius, radius, radius);
         Self {
             center: Ray::new(static_center, Vec3::zero()),
             radius,
             mat: material,
+
+            bbox: Aabb::new_with_point(&(static_center - rvec), &(static_center + rvec)),
         }
     }
 
@@ -27,10 +32,15 @@ impl Sphere {
         radius: f64,
         material: Rc<dyn Material>,
     ) -> Self {
+        let rvec = Vec3::new(radius, radius, radius);
+        let box1 = Aabb::new_with_point(&(center1 - rvec), &(center1 + rvec));
+        let box2 = Aabb::new_with_point(&(center2 - rvec), &(center2 + rvec));
         Self {
             center: Ray::new(center1, center2 - center1),
             radius,
             mat: material,
+
+            bbox: Aabb::new_with_box(&box1, &box2),
         }
     }
 }
@@ -64,5 +74,9 @@ impl Hittable for Sphere {
         hit_record.mat = Some(Rc::clone(&self.mat));
 
         true
+    }
+
+    fn bounding_box(&self) -> &Aabb {
+        &self.bbox
     }
 }

@@ -3,6 +3,8 @@ use super::hittable::HitRecord;
 use super::ray::Ray;
 use super::rtweekend;
 use super::vec3;
+use crate::texture::{SolidColor, Texture};
+use std::rc::Rc;
 
 pub trait Material {
     fn scatter(
@@ -15,11 +17,16 @@ pub trait Material {
 }
 
 pub struct Lambertian {
-    pub albedo: Color,
+    pub albedo: Rc<dyn Texture>,
 }
 
 impl Lambertian {
     pub fn new(a: Color) -> Self {
+        Self {
+            albedo: Rc::new(SolidColor::new(a)),
+        }
+    }
+    pub fn new_with_texture(a: Rc<dyn Texture>) -> Self {
         Self { albedo: a }
     }
 }
@@ -39,7 +46,7 @@ impl Material for Lambertian {
         }
 
         *scattered = Ray::new_with_time(rec.p, scatter_direction, r_in.time());
-        *attenuation = self.albedo;
+        *attenuation = self.albedo.value(rec.u, rec.v, rec.p);
         true
     }
 }

@@ -2,45 +2,39 @@ use crate::rtweekend::{random_double, random_double_range};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Debug, Copy, Clone)]
-pub struct Vec3 {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-}
+pub struct Vec3(pub [f64; 3]);
 
 impl Default for Vec3 {
     fn default() -> Self {
-        Self {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        }
+        Self([0.0, 0.0, 0.0])
     }
 }
 
 impl Vec3 {
     pub fn zero() -> Self {
-        Self {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        }
+        Self([0.0, 0.0, 0.0])
     }
 
     pub fn one() -> Self {
-        Self {
-            x: 1.0,
-            y: 1.0,
-            z: 1.0,
-        }
+        Self([1.0, 1.0, 1.0])
     }
 
     pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Self { x, y, z }
+        Self([x, y, z])
+    }
+
+    pub fn x(&self) -> f64 {
+        self.0[0]
+    }
+    pub fn y(&self) -> f64 {
+        self.0[1]
+    }
+    pub fn z(&self) -> f64 {
+        self.0[2]
     }
 
     pub fn length_squared(&self) -> f64 {
-        self.x * self.x + self.y * self.y + self.z * self.z
+        self[0] * self[0] + self[1] * self[1] + self[2] * self[2]
     }
 
     pub fn length(&self) -> f64 {
@@ -49,156 +43,129 @@ impl Vec3 {
 
     pub fn near_zero(&self) -> bool {
         let s = 1e-8;
-        self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
+        self[0].abs() < s && self[1].abs() < s && self[2].abs() < s
     }
 
     pub fn random() -> Self {
-        Self {
-            x: random_double(),
-            y: random_double(),
-            z: random_double(),
-        }
+        Self([random_double(), random_double(), random_double()])
     }
 
     pub fn random_range(min: f64, max: f64) -> Self {
-        Self {
-            x: random_double_range(min, max),
-            y: random_double_range(min, max),
-            z: random_double_range(min, max),
-        }
+        Self([
+            random_double_range(min, max),
+            random_double_range(min, max),
+            random_double_range(min, max),
+        ])
+    }
+}
+
+// 实现 Index 和 IndexMut 以便直接通过 v[0]、v[1]、v[2] 访问
+impl std::ops::Index<usize> for Vec3 {
+    type Output = f64;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl std::ops::IndexMut<usize> for Vec3 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
     }
 }
 
 impl Neg for Vec3 {
     type Output = Self;
     fn neg(self) -> Self::Output {
-        Self {
-            x: -self.x,
-            y: -self.y,
-            z: -self.z,
-        }
+        Self([-self[0], -self[1], -self[2]])
     }
 }
 
 impl Add for Vec3 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-            z: self.z + rhs.z,
-        }
+        Self([self[0] + rhs[0], self[1] + rhs[1], self[2] + rhs[2]])
     }
 }
 
 impl AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
-        *self = Self {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-            z: self.z + rhs.z,
-        }
+        self[0] += rhs[0];
+        self[1] += rhs[1];
+        self[2] += rhs[2];
     }
 }
 
 impl Sub for Vec3 {
     type Output = Self;
-
     fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
-        }
+        Self([self[0] - rhs[0], self[1] - rhs[1], self[2] - rhs[2]])
     }
 }
 
 impl SubAssign for Vec3 {
     fn sub_assign(&mut self, rhs: Self) {
-        *self = Self {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
-        }
+        self[0] -= rhs[0];
+        self[1] -= rhs[1];
+        self[2] -= rhs[2];
     }
 }
 
 impl Mul<f64> for Vec3 {
     type Output = Self;
     fn mul(self, rhs: f64) -> Self::Output {
-        Self {
-            x: self.x * rhs,
-            y: self.y * rhs,
-            z: self.z * rhs,
-        }
+        Self([self[0] * rhs, self[1] * rhs, self[2] * rhs])
     }
 }
 
 impl Mul for Vec3 {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x * rhs.x,
-            y: self.y * rhs.y,
-            z: self.z * rhs.z,
-        }
+        Self([self[0] * rhs[0], self[1] * rhs[1], self[2] * rhs[2]])
     }
 }
 
 impl Mul<Vec3> for f64 {
     type Output = Vec3;
     fn mul(self, rhs: Vec3) -> Self::Output {
-        Vec3 {
-            x: rhs.x * self,
-            y: rhs.y * self,
-            z: rhs.z * self,
-        }
+        Vec3([rhs[0] * self, rhs[1] * self, rhs[2] * self])
     }
 }
 
 impl MulAssign<f64> for Vec3 {
     fn mul_assign(&mut self, rhs: f64) {
-        *self = Self {
-            x: self.x * rhs,
-            y: self.y * rhs,
-            z: self.z * rhs,
-        };
+        self[0] *= rhs;
+        self[1] *= rhs;
+        self[2] *= rhs;
     }
 }
 
 impl DivAssign<f64> for Vec3 {
     fn div_assign(&mut self, rhs: f64) {
-        *self = Self {
-            x: self.x / rhs,
-            y: self.y / rhs,
-            z: self.z / rhs,
-        };
+        self[0] /= rhs;
+        self[1] /= rhs;
+        self[2] /= rhs;
     }
 }
 
 impl Div<f64> for Vec3 {
     type Output = Self;
     fn div(self, rhs: f64) -> Self::Output {
-        Self {
-            x: self.x / rhs,
-            y: self.y / rhs,
-            z: self.z / rhs,
-        }
+        Self([self[0] / rhs, self[1] / rhs, self[2] / rhs])
     }
 }
 
 pub type Point3 = Vec3;
 
 pub fn dot(u: Vec3, v: Vec3) -> f64 {
-    u.x * v.x + u.y * v.y + u.z * v.z
+    u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
 }
 
 pub fn cross(u: Vec3, v: Vec3) -> Vec3 {
-    Vec3 {
-        x: u.y * v.z - u.z * v.y,
-        y: u.z * v.x - u.x * v.z,
-        z: u.x * v.y - u.y * v.x,
-    }
+    Vec3([
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
+    ])
 }
 
 pub fn unit_vector(v: Vec3) -> Vec3 {

@@ -26,9 +26,9 @@ impl Color {
     //}
 
     pub fn to_color(&self, samples_per_pixel: usize) -> Rgb<u8> {
-        let r = self.x;
-        let g = self.y;
-        let b = self.z;
+        let r = self.x();
+        let g = self.y();
+        let b = self.z();
 
         let scale = 1.0 / samples_per_pixel as f64;
         let r = scale * r;

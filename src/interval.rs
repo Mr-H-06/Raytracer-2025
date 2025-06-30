@@ -1,6 +1,6 @@
 use super::rtweekend;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Interval {
     pub min: f64,
     pub max: f64,
@@ -11,8 +11,20 @@ impl Interval {
         Self { min, max }
     }
 
+    pub fn new_with_interval(a: &Interval, b: &Interval) -> Self {
+        Self {
+            min: a.min.min(b.min),
+            max: a.max.max(b.max),
+        }
+    }
+
     pub fn size(&self) -> f64 {
         self.max - self.min
+    }
+
+    pub fn expand(&self, delta: f64) -> Interval {
+        let padding = delta / 2.0;
+        Interval::new(self.min - padding, self.max + padding)
     }
 
     pub fn contains(&self, x: f64) -> bool {
