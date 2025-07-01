@@ -1,7 +1,7 @@
 use super::interval;
 use super::interval::Interval;
 use super::ray::Ray;
-use super::vec3::Point3;
+use super::vec3::{Point3, Vec3};
 
 #[derive(Default, Clone)] // 默认的AABB是空的，因为区间默认是空的。
 pub struct Aabb {
@@ -92,6 +92,31 @@ impl Aabb {
         }
     }
 }
+
+impl std::ops::Add<Vec3> for &Aabb {
+    type Output = Aabb;
+
+    fn add(self, rhs: Vec3) -> Self::Output {
+        Aabb {
+            x: &self.x + rhs.x(),
+            y: &self.y + rhs.y(),
+            z: &self.z + rhs.z(),
+        }
+    }
+}
+
+impl std::ops::Add<&Aabb> for Vec3 {
+    type Output = Aabb;
+
+    fn add(self, rhs: &Aabb) -> Self::Output {
+        Aabb {
+            x: self.x() + &rhs.x,
+            y: self.y() + &rhs.y,
+            z: self.z() + &rhs.z,
+        }
+    }
+}
+
 pub const EMPTY: Aabb = Aabb {
     x: interval::EMPTY,
     y: interval::EMPTY,

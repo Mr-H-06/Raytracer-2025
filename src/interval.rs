@@ -46,6 +46,28 @@ impl Interval {
     }
 }
 
+impl std::ops::Add<f64> for &Interval {
+    type Output = Interval;
+
+    fn add(self, rhs: f64) -> Self::Output {
+        Interval {
+            min: self.min + rhs,
+            max: self.max + rhs,
+        }
+    }
+}
+
+impl std::ops::Add<&Interval> for f64 {
+    type Output = Interval;
+
+    fn add(self, rhs: &Interval) -> Self::Output {
+        Interval {
+            min: self + rhs.min,
+            max: self + rhs.max,
+        }
+    }
+}
+
 pub const EMPTY: Interval = Interval {
     min: rtweekend::INFINITY,
     max: -rtweekend::INFINITY,

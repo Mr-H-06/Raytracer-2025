@@ -74,7 +74,7 @@ fn cornell_box() {
         Vec3::new(0.0, 555.0, 0.0),
         Rc::clone(&white),
     )));
-    world.add(quad::make_box(
+    /*world.add(quad::make_box(
         Point3::new(130.0, 0.0, 65.0),
         Point3::new(295.0, 165.0, 230.0),
         Rc::clone(&white),
@@ -83,7 +83,27 @@ fn cornell_box() {
         Point3::new(265.0, 0.0, 295.0),
         Point3::new(430.0, 330.0, 460.0),
         Rc::clone(&white),
+    ));*/
+
+    let box1 = quad::make_box(
+        Point3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 330.0, 165.0),
+        Rc::clone(&white),
+    );
+    let box1 = Rc::new(hittable::RotateY::new(box1, 15.0));
+    let box1 = Rc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
+    world.add(box1);
+    let box2 = quad::make_box(
+        Point3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 165.0, 165.0),
+        Rc::clone(&white),
+    );
+    let box2 = Rc::new(hittable::RotateY::new(box2, -18.0));
+    let box2 = Rc::new(hittable::Translate::new(
+        box2,
+        vec3::Vec3::new(130.0, 0.0, 65.0),
     ));
+    world.add(box2);
 
     let mut cam = Camera::default();
 
