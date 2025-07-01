@@ -1,6 +1,7 @@
 use super::hittable::{HitRecord, Hittable};
 use super::material::Material;
 use super::ray::Ray;
+use super::rtweekend;
 use super::vec3::{self, Point3, Vec3};
 use crate::aabb::Aabb;
 use crate::interval::Interval;
@@ -43,6 +44,12 @@ impl Sphere {
             bbox: Aabb::new_with_box(&box1, &box2),
         }
     }
+
+    fn get_sphere_uv(p: Point3) -> (f64, f64) {
+        let theta = (-p.y()).acos();
+        let phi = (-p.z()).atan2(p.x()) + rtweekend::PI;
+        (phi / (2.0 * rtweekend::PI), theta / rtweekend::PI)
+    }
 }
 
 impl Hittable for Sphere {
@@ -71,6 +78,7 @@ impl Hittable for Sphere {
         hit_record.p = r.at(hit_record.t);
         let outward_normal = (hit_record.p - current_center) / self.radius;
         hit_record.set_face_normal(r, outward_normal);
+        (hit_record.u, hit_record.v) = Self::get_sphere_uv(outward_normal);
         hit_record.mat = Some(Rc::clone(&self.mat));
 
         true

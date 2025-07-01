@@ -8,6 +8,7 @@ pub mod hittable_list;
 pub mod interval;
 pub mod material;
 pub mod ray;
+pub mod rtw_stb_image;
 pub mod rtweekend;
 pub mod sphere;
 pub mod texture;
@@ -17,13 +18,36 @@ use std::rc::Rc;
 
 use crate::bvh::BvhNode;
 use crate::camera::Camera;
-use crate::texture::{CheckerTexture, Texture};
+use crate::texture::{CheckerTexture, ImageTexture, Texture};
 use crate::vec3::Vec3;
 use color::Color;
 use hittable_list::HittableList;
 use material::{Dielectric, Lambertian, Material, Metal};
 use sphere::Sphere;
 use vec3::Point3;
+
+fn earth() {
+    let earth_texture: Rc<dyn Texture> = Rc::new(ImageTexture::new("earthmap.jpg"));
+    let earth_surface: Rc<dyn Material> =
+        Rc::new(Lambertian::new_with_texture(Rc::clone(&earth_texture)));
+    let globe = Rc::new(Sphere::new(Point3::new(0.0, 0.0, 0.0), 2.0, earth_surface));
+
+    let mut cam = Camera::default();
+
+    cam.aspect_ratio = 16.0 / 9.0;
+    cam.image_width = 400;
+    cam.samples_per_pixel = 50;
+    cam.max_depth = 10;
+
+    cam.vfov = 20.0;
+    cam.lookfrom = Point3::new(0.0, 0.0, 12.0);
+    cam.lookat = Point3::new(0.0, 0.0, 0.0);
+    cam.vup = Vec3::new(0.0, 1.0, 0.0);
+
+    cam.defocus_angle = 0.0;
+
+    cam.render(&HittableList::new_with_object(globe));
+}
 
 fn bouncing_spheres() {
     // World
@@ -93,7 +117,7 @@ fn bouncing_spheres() {
         material3,
     )));
 
-    let world = HittableList::from_object(Rc::new(BvhNode::new(&mut world)));
+    let world = HittableList::new_with_object(Rc::new(BvhNode::new(&mut world)));
 
     // Camera
     let mut cam = Camera::default();
@@ -144,7 +168,7 @@ fn checkered_spheres() {
     cam.vfov = 20.0;
     cam.lookfrom = Point3::new(13.0, 2.0, 3.0);
     cam.lookat = Point3::new(0.0, 0.0, 0.0);
-    cam.vup = vec3::Vec3::new(0.0, 1.0, 0.0);
+    cam.vup = Vec3::new(0.0, 1.0, 0.0);
 
     cam.defocus_angle = 0.0;
 
@@ -152,9 +176,10 @@ fn checkered_spheres() {
 }
 
 fn main() {
-    match 2 {
+    match 3 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
+        3 => earth(),
         _ => (),
     }
 }

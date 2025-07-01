@@ -16,7 +16,7 @@ impl HittableList {
         HittableList::default()
     }
 
-    pub fn from_object(object: Rc<dyn Hittable>) -> Self {
+    pub fn new_with_object(object: Rc<dyn Hittable>) -> Self {
         Self {
             objects: vec![object],
             bbox: Aabb::default(),
