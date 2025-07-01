@@ -83,12 +83,10 @@ impl ImageTexture {
 
 impl Texture for ImageTexture {
     fn value(&self, u: f64, v: f64, _p: Point3) -> Color {
-        // 如果没有纹理数据，则返回固定的青色作为调试辅助。
         if self.image.height() == 0 {
             return Color::new(0.0, 1.0, 1.0);
         }
 
-        // 将输入的纹理坐标限制在 [0,1] x [1,0] 范围内
         let u = u.clamp(0.0, 1.0);
         let v = 1.0 - v.clamp(0.0, 1.0);
 
@@ -105,13 +103,31 @@ impl Texture for ImageTexture {
     }
 }
 
-#[derive(Default)]
 pub struct NoiseTexture {
     noise: Perlin,
+    scale: f64,
+}
+
+impl Default for NoiseTexture {
+    fn default() -> Self {
+        Self {
+            noise: Perlin::default(),
+            scale: 1.0,
+        }
+    }
+}
+
+impl NoiseTexture {
+    pub fn new(scale: f64) -> Self {
+        Self {
+            noise: Perlin::default(),
+            scale,
+        }
+    }
 }
 
 impl Texture for NoiseTexture {
     fn value(&self, _u: f64, _v: f64, p: Point3) -> Color {
-        Color::new(1.0, 1.0, 1.0) * self.noise.noise(p)
+        Color::new(1.0, 1.0, 1.0) * self.noise.noise(self.scale * p)
     }
 }
