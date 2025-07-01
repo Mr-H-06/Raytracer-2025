@@ -14,6 +14,7 @@ pub struct Camera {
     pub image_width: u32,
     pub samples_per_pixel: usize,
     pub max_depth: i32,
+    pub background: Color,
     pub vfov: f64,
     pub lookfrom: Point3,
     pub lookat: Point3,
@@ -36,7 +37,7 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book2/image16.png");
+        let path = std::path::Path::new("output/book2/image17.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -56,7 +57,7 @@ impl Camera {
 
                 for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    pixel_color += Camera::ray_color(&r, self.max_depth, world);
+                    pixel_color += self.ray_color(&r, self.max_depth, world);
                 }
 
                 let pixel = img.get_pixel_mut(i, j);
@@ -106,32 +107,33 @@ impl Camera {
             self.center - (self.focus_dist * self.w) - (0.5 * viewport_u) - (0.5 * viewport_v);
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
         let defocus_radius =
-            self.focus_dist * (rtweekend::degrees_to_radians(self.defocus_angle / 2.0)).tan();
+            self.focus_dist * rtweekend::degrees_to_radians(self.defocus_angle / 2.0).tan();
         self.defocus_disk_u = self.u * defocus_radius;
         self.defocus_disk_v = self.v * defocus_radius;
     }
 
-    fn ray_color(r: &Ray, depth: i32, world: &dyn Hittable) -> Color {
+    fn ray_color(&self, r: &Ray, depth: i32, world: &dyn Hittable) -> Color {
         let mut rec = HitRecord::default();
 
         if depth <= 0 {
             return Color::default();
         }
 
-        if world.hit(r, &Interval::new(0.001, rtweekend::INFINITY), &mut rec) {
+        if !world.hit(r, &Interval::new(0.001, rtweekend::INFINITY), &mut rec) {
+            return self.background;
+        }
+        if let Some(mat) = rec.mat.clone() {
             let mut scattered = Ray::default();
             let mut attenuation = Color::default();
-            if let Some(mat) = rec.mat.clone() {
-                if mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
-                    return attenuation * Self::ray_color(&scattered, depth - 1, world);
-                }
+            let color_from_emission = mat.emitted(rec.u, rec.v, rec.p);
+            if !mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
+                return color_from_emission;
             }
-            return Color::default();
+            let color_from_scatter = attenuation * self.ray_color(&scattered, depth - 1, world);
+            color_from_emission + color_from_scatter
+        } else {
+            Color::default()
         }
-
-        let unit_direction = vec3::unit_vector(r.direction());
-        let a = 0.5 * (unit_direction.y() + 1.0);
-        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
     }
 
     fn get_ray(&self, i: u32, j: u32) -> Ray {
@@ -170,6 +172,7 @@ impl Default for Camera {
             image_height: 0,
             samples_per_pixel: 10,
             max_depth: 10,
+            background: Color::default(),
             vfov: 90.0,
             lookfrom: Point3::new(0.0, 0.0, -1.0),
             lookat: Point3::new(0.0, 0.0, 0.0),
