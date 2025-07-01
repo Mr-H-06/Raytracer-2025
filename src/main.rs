@@ -40,40 +40,50 @@ fn cornell_box() {
 
     world.add(Rc::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
-        vec3::Vec3::new(0.0, 555.0, 0.0),
-        vec3::Vec3::new(0.0, 0.0, 555.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
         green,
     )));
     world.add(Rc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
-        vec3::Vec3::new(0.0, 555.0, 0.0),
-        vec3::Vec3::new(0.0, 0.0, 555.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
         red,
     )));
     world.add(Rc::new(Quad::new(
         Point3::new(343.0, 554.0, 332.0),
-        vec3::Vec3::new(-130.0, 0.0, 0.0),
-        vec3::Vec3::new(0.0, 0.0, -105.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
         light,
     )));
     world.add(Rc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
-        vec3::Vec3::new(555.0, 0.0, 0.0),
-        vec3::Vec3::new(0.0, 0.0, 555.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
         Rc::clone(&white),
     )));
     world.add(Rc::new(Quad::new(
         Point3::new(555.0, 555.0, 555.0),
-        vec3::Vec3::new(-555.0, 0.0, 0.0),
-        vec3::Vec3::new(0.0, 0.0, -555.0),
+        Vec3::new(-555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -555.0),
         Rc::clone(&white),
     )));
     world.add(Rc::new(Quad::new(
         Point3::new(0.0, 0.0, 555.0),
-        vec3::Vec3::new(555.0, 0.0, 0.0),
-        vec3::Vec3::new(0.0, 555.0, 0.0),
-        white,
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Rc::clone(&white),
     )));
+    world.add(quad::make_box(
+        Point3::new(130.0, 0.0, 65.0),
+        Point3::new(295.0, 165.0, 230.0),
+        Rc::clone(&white),
+    ));
+    world.add(quad::make_box(
+        Point3::new(265.0, 0.0, 295.0),
+        Point3::new(430.0, 330.0, 460.0),
+        Rc::clone(&white),
+    ));
 
     let mut cam = Camera::default();
 
@@ -86,7 +96,7 @@ fn cornell_box() {
     cam.vfov = 40.0;
     cam.lookfrom = Point3::new(278.0, 278.0, -800.0);
     cam.lookat = Point3::new(278.0, 278.0, 0.0);
-    cam.vup = vec3::Vec3::new(0.0, 1.0, 0.0);
+    cam.vup = Vec3::new(0.0, 1.0, 0.0);
 
     cam.defocus_angle = 0.0;
 
