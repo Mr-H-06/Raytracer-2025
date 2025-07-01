@@ -26,6 +26,7 @@ impl Lambertian {
             albedo: Rc::new(SolidColor::new(a)),
         }
     }
+
     pub fn new_with_texture(a: Rc<dyn Texture>) -> Self {
         Self { albedo: a }
     }
