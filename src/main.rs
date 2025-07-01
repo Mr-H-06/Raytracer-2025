@@ -44,11 +44,17 @@ fn simple_light() {
         Rc::new(Lambertian::new_with_texture(pertext)),
     )));
 
-    let difflight = Rc::new(DiffuseLight::new_with_color(Color::new(4.0, 4.0, 4.0)));
+    let difflight: Rc<dyn Material> =
+        Rc::new(DiffuseLight::new_with_color(Color::new(4.0, 4.0, 4.0)));
+    world.add(Rc::new(Sphere::new(
+        Point3::new(0.0, 7.0, 0.0),
+        2.0,
+        Rc::clone(&difflight),
+    )));
     world.add(Rc::new(Quad::new(
         Point3::new(3.0, 1.0, -2.0),
-        vec3::Vec3::new(2.0, 0.0, 0.0),
-        vec3::Vec3::new(0.0, 2.0, 0.0),
+        Vec3::new(2.0, 0.0, 0.0),
+        Vec3::new(0.0, 2.0, 0.0),
         difflight,
     )));
 
@@ -56,14 +62,14 @@ fn simple_light() {
 
     cam.aspect_ratio = 16.0 / 9.0;
     cam.image_width = 400;
-    cam.samples_per_pixel = 50;
-    cam.max_depth = 10;
+    cam.samples_per_pixel = 100;
+    cam.max_depth = 50;
     cam.background = Color::default();
 
     cam.vfov = 20.0;
     cam.lookfrom = Point3::new(26.0, 3.0, 6.0);
     cam.lookat = Point3::new(0.0, 2.0, 0.0);
-    cam.vup = vec3::Vec3::new(0.0, 1.0, 0.0);
+    cam.vup = Vec3::new(0.0, 1.0, 0.0);
 
     cam.defocus_angle = 0.0;
 
