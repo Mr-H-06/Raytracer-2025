@@ -29,6 +29,69 @@ use quad::Quad;
 use sphere::Sphere;
 use vec3::Point3;
 
+fn cornell_box() {
+    let mut world = HittableList::default();
+
+    let red: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
+    let white: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let green: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
+    let light: Rc<dyn Material> =
+        Rc::new(DiffuseLight::new_with_color(Color::new(15.0, 15.0, 15.0)));
+
+    world.add(Rc::new(Quad::new(
+        Point3::new(555.0, 0.0, 0.0),
+        vec3::Vec3::new(0.0, 555.0, 0.0),
+        vec3::Vec3::new(0.0, 0.0, 555.0),
+        green,
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(0.0, 0.0, 0.0),
+        vec3::Vec3::new(0.0, 555.0, 0.0),
+        vec3::Vec3::new(0.0, 0.0, 555.0),
+        red,
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(343.0, 554.0, 332.0),
+        vec3::Vec3::new(-130.0, 0.0, 0.0),
+        vec3::Vec3::new(0.0, 0.0, -105.0),
+        light,
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(0.0, 0.0, 0.0),
+        vec3::Vec3::new(555.0, 0.0, 0.0),
+        vec3::Vec3::new(0.0, 0.0, 555.0),
+        Rc::clone(&white),
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(555.0, 555.0, 555.0),
+        vec3::Vec3::new(-555.0, 0.0, 0.0),
+        vec3::Vec3::new(0.0, 0.0, -555.0),
+        Rc::clone(&white),
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(0.0, 0.0, 555.0),
+        vec3::Vec3::new(555.0, 0.0, 0.0),
+        vec3::Vec3::new(0.0, 555.0, 0.0),
+        white,
+    )));
+
+    let mut cam = Camera::default();
+
+    cam.aspect_ratio = 1.0;
+    cam.image_width = 600;
+    cam.samples_per_pixel = 200;
+    cam.max_depth = 50;
+    cam.background = Color::default();
+
+    cam.vfov = 40.0;
+    cam.lookfrom = Point3::new(278.0, 278.0, -800.0);
+    cam.lookat = Point3::new(278.0, 278.0, 0.0);
+    cam.vup = vec3::Vec3::new(0.0, 1.0, 0.0);
+
+    cam.defocus_angle = 0.0;
+
+    cam.render(&world);
+}
 fn simple_light() {
     let mut world = HittableList::default();
 
@@ -320,13 +383,14 @@ fn checkered_spheres() {
 }
 
 fn main() {
-    match 6 {
+    match 7 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => perlin_spheres(),
         5 => quads(),
         6 => simple_light(),
+        7 => cornell_box(),
         _ => (),
     }
 }
