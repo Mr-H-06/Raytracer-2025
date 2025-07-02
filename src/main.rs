@@ -3,6 +3,7 @@ pub mod aabb;
 pub mod bvh;
 pub mod camera;
 pub mod color;
+pub mod constant_medium;
 pub mod hittable;
 pub mod hittable_list;
 pub mod interval;
@@ -28,6 +29,96 @@ use material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
 use quad::Quad;
 use sphere::Sphere;
 use vec3::Point3;
+
+fn cornell_smoke() {
+    let mut world = HittableList::default();
+
+    let red: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
+    let white: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let green: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
+    let light: Rc<dyn Material> = Rc::new(DiffuseLight::new_with_color(Color::new(7.0, 7.0, 7.0)));
+
+    world.add(Rc::new(Quad::new(
+        Point3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        green,
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        red,
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(113.0, 554.0, 127.0),
+        Vec3::new(330.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 305.0),
+        light,
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(0.0, 555.0, 0.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Rc::clone(&white),
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(0.0, 0.0, 0.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Rc::clone(&white),
+    )));
+    world.add(Rc::new(Quad::new(
+        Point3::new(0.0, 0.0, 555.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Rc::clone(&white),
+    )));
+
+    let box1 = quad::make_box(
+        Point3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 330.0, 165.0),
+        Rc::clone(&white),
+    );
+    let box1 = Rc::new(hittable::RotateY::new(box1, 15.0));
+    let box1 = Rc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
+
+    let box2 = quad::make_box(
+        Point3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 165.0, 165.0),
+        Rc::clone(&white),
+    );
+    let box2 = Rc::new(hittable::RotateY::new(box2, -18.0));
+    let box2 = Rc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
+
+    world.add(Rc::new(constant_medium::ConstantMedium::new_with_color(
+        box1,
+        0.01,
+        Color::new(0.0, 0.0, 0.0),
+    )));
+    world.add(Rc::new(constant_medium::ConstantMedium::new_with_color(
+        box2,
+        0.01,
+        Color::new(1.0, 1.0, 1.0),
+    )));
+
+    let mut cam = Camera::default();
+
+    cam.aspect_ratio = 1.0;
+    cam.image_width = 600;
+    cam.samples_per_pixel = 200;
+    cam.max_depth = 50;
+    cam.background = Color::default();
+
+    cam.vfov = 40.0;
+    cam.lookfrom = Point3::new(278.0, 278.0, -800.0);
+    cam.lookat = Point3::new(278.0, 278.0, 0.0);
+    cam.vup = Vec3::new(0.0, 1.0, 0.0);
+
+    cam.defocus_angle = 0.0;
+
+    cam.render(&world);
+}
 
 fn cornell_box() {
     let mut world = HittableList::default();
@@ -99,10 +190,7 @@ fn cornell_box() {
         Rc::clone(&white),
     );
     let box2 = Rc::new(hittable::RotateY::new(box2, -18.0));
-    let box2 = Rc::new(hittable::Translate::new(
-        box2,
-        vec3::Vec3::new(130.0, 0.0, 65.0),
-    ));
+    let box2 = Rc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
     world.add(box2);
 
     let mut cam = Camera::default();
@@ -413,7 +501,7 @@ fn checkered_spheres() {
 }
 
 fn main() {
-    match 7 {
+    match 8 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
@@ -421,6 +509,7 @@ fn main() {
         5 => quads(),
         6 => simple_light(),
         7 => cornell_box(),
+        8 => cornell_smoke(),
         _ => (),
     }
 }
