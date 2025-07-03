@@ -4,7 +4,7 @@ use super::vec3::{self, Point3, Vec3};
 const POINT_COUNT: usize = 256;
 
 pub struct Perlin {
-    ranfloat: [f64; POINT_COUNT],
+    //ranfloat: [f64; POINT_COUNT],
     randvec: [Vec3; POINT_COUNT],
     perm_x: [i32; POINT_COUNT],
     perm_y: [i32; POINT_COUNT],
@@ -26,7 +26,7 @@ impl Default for Perlin {
         Self::perlin_generate_perm(&mut perm_z);
 
         Self {
-            ranfloat: [0.0; POINT_COUNT],
+            //ranfloat: [0.0; POINT_COUNT],
             randvec,
             perm_x,
             perm_y,

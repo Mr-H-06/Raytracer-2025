@@ -1,6 +1,6 @@
-use super::HittableList;
 use super::aabb::Aabb;
 use super::hittable::{HitRecord, Hittable};
+use super::hittable_list::HittableList;
 use super::material::Material;
 use super::vec3::{Point3, Vec3};
 use crate::vec3;
