@@ -640,7 +640,7 @@ fn main() {
         6 => simple_light(),
         7 => cornell_box(),
         8 => cornell_smoke(),
-        9 => final_scene(800, 10000, 40),
+        9 => final_scene(400, 300, 5),
         _ => final_scene(400, 250, 4),
     }
 }
