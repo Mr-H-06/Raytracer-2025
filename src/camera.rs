@@ -22,6 +22,8 @@ pub struct Camera {
     pub defocus_angle: f64,
     pub focus_dist: f64,
     image_height: u32,
+    sqrt_spp: usize,
+    recip_sqrt_spp: f64,
     center: Point3,
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
@@ -37,7 +39,7 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book3/image1.png");
+        let path = std::path::Path::new("output/book3/image2.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -55,9 +57,15 @@ impl Camera {
             for i in 0..self.image_width {
                 let mut pixel_color = Color::default();
 
-                for _ in 0..self.samples_per_pixel {
+                /*for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
                     pixel_color += self.ray_color(&r, self.max_depth, world);
+                }*/
+                for s_j in 0..self.sqrt_spp {
+                    for s_i in 0..self.sqrt_spp {
+                        let r = self.get_ray(i, j, s_i as u32, s_j as u32);
+                        pixel_color += self.ray_color(&r, self.max_depth, world);
+                    }
                 }
 
                 let pixel = img.get_pixel_mut(i, j);
@@ -81,6 +89,9 @@ impl Camera {
         } else {
             self.image_height
         };
+
+        self.sqrt_spp = (self.samples_per_pixel as f64).sqrt() as usize;
+        self.recip_sqrt_spp = 1.0 / (self.sqrt_spp as f64);
 
         self.center = self.lookfrom;
 
@@ -136,10 +147,10 @@ impl Camera {
         }
     }
 
-    fn get_ray(&self, i: u32, j: u32) -> Ray {
+    fn get_ray(&self, i: u32, j: u32, s_i: u32, s_j: u32) -> Ray {
         let pixel_center =
             self.pixel00_loc + i as f64 * self.pixel_delta_u + j as f64 * self.pixel_delta_v;
-        let pixel_sample = pixel_center + self.pixel_sample_square();
+        let pixel_sample = pixel_center + self.pixel_sample_square(s_i, s_j);
 
         let ray_origin = if self.defocus_angle <= 0.0 {
             self.center
@@ -152,9 +163,9 @@ impl Camera {
         Ray::new_with_time(ray_origin, ray_direction, ray_time)
     }
 
-    fn pixel_sample_square(&self) -> Vec3 {
-        let px = -0.5 + rtweekend::random_double();
-        let py = -0.5 + rtweekend::random_double();
+    fn pixel_sample_square(&self, s_i: u32, s_j: u32) -> Vec3 {
+        let px = -0.5 + self.recip_sqrt_spp * (s_i as f64 + rtweekend::random_double());
+        let py = -0.5 + self.recip_sqrt_spp * (s_j as f64 + rtweekend::random_double());
         px * self.pixel_delta_u + py * self.pixel_delta_v
     }
 
@@ -179,6 +190,8 @@ impl Default for Camera {
             vup: Vec3::new(0.0, 1.0, 0.0),
             defocus_angle: 0.0,
             focus_dist: 10.0,
+            sqrt_spp: 10.0_f64.sqrt() as usize,
+            recip_sqrt_spp: 1.0 / (10.0_f64.sqrt()),
             center: Point3::default(),
             pixel00_loc: Point3::default(),
             pixel_delta_u: Vec3::default(),
