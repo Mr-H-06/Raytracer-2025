@@ -9,6 +9,7 @@ pub mod hittable_list;
 pub mod interval;
 pub mod material;
 pub mod onb;
+pub mod pdf;
 pub mod perlin;
 pub mod quad;
 pub mod ray;
@@ -328,7 +329,7 @@ fn cornell_box() {
 
     cam.aspect_ratio = 1.0;
     cam.image_width = 600;
-    cam.samples_per_pixel = 10;
+    cam.samples_per_pixel = 1000;
     cam.max_depth = 50;
     cam.background = Color::default();
 
