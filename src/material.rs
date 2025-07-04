@@ -18,6 +18,10 @@ pub trait Material {
     fn emitted(&self, _u: f64, _v: f64, _p: vec3::Point3) -> Color {
         Color::new(0.0, 0.0, 0.0)
     }
+
+    fn scattering_pdf(&self, _r_in: &Ray, _rec: &HitRecord, _scattered: &Ray) -> f64 {
+        0.0
+    }
 }
 
 pub struct Lambertian {
@@ -53,6 +57,15 @@ impl Material for Lambertian {
         *scattered = Ray::new_with_time(rec.p, scatter_direction, r_in.time());
         *attenuation = self.albedo.value(rec.u, rec.v, rec.p);
         true
+    }
+
+    fn scattering_pdf(&self, _r_in: &Ray, rec: &HitRecord, scattered: &Ray) -> f64 {
+        let cos_theta = vec3::dot(rec.normal, vec3::unit_vector(scattered.direction()));
+        if cos_theta < 0.0 {
+            0.0
+        } else {
+            cos_theta / rtweekend::PI
+        }
     }
 }
 
