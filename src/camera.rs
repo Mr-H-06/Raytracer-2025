@@ -39,7 +39,7 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book3/image6.png");
+        let path = std::path::Path::new("output/book3/image7.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -142,8 +142,29 @@ impl Camera {
                 return color_from_emission;
             }
 
+            let on_light = Point3::new(
+                rtweekend::random_double_range(213.0, 343.0),
+                554.0,
+                rtweekend::random_double_range(227.0, 332.0),
+            );
+            let to_light = on_light - rec.p;
+            let distance_squared = to_light.length_squared();
+            let to_light = vec3::unit_vector(to_light);
+
+            if vec3::dot(to_light, rec.normal) < 0.0 {
+                return color_from_emission;
+            }
+
+            let light_area = (343.0 - 213.0) * (332.0 - 227.0);
+            let light_cosine = to_light.y().abs();
+            if light_cosine < 0.000001 {
+                return color_from_emission;
+            }
+
+            pdf = distance_squared / (light_cosine * light_area);
+            scattered = Ray::new_with_time(rec.p, to_light, r.time());
+
             let scattering_pdf = mat.scattering_pdf(r, &rec, &scattered);
-            let pdf = scattering_pdf;
 
             let color_from_scatter =
                 (attenuation * scattering_pdf * self.ray_color(&scattered, depth - 1, world)) / pdf;
