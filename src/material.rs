@@ -1,5 +1,6 @@
 use super::color::Color;
 use super::hittable::HitRecord;
+use super::onb;
 use super::ray::Ray;
 use super::rtweekend;
 use super::vec3;
@@ -13,6 +14,7 @@ pub trait Material {
         rec: &HitRecord,
         attenuation: &mut Color,
         scattered: &mut Ray,
+        _pdf: &mut f64,
     ) -> bool;
 
     fn emitted(&self, _u: f64, _v: f64, _p: vec3::Point3) -> Color {
@@ -47,8 +49,10 @@ impl Material for Lambertian {
         rec: &HitRecord,
         attenuation: &mut Color,
         scattered: &mut Ray,
+        pdf: &mut f64,
     ) -> bool {
-        let mut scatter_direction = vec3::random_on_hemisphere(rec.normal);
+        let uvw = onb::Onb::new_from_w(rec.normal);
+        let mut scatter_direction = uvw.local_v(vec3::random_cosine_direction());
 
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal;
@@ -56,6 +60,7 @@ impl Material for Lambertian {
 
         *scattered = Ray::new_with_time(rec.p, scatter_direction, r_in.time());
         *attenuation = self.albedo.value(rec.u, rec.v, rec.p);
+        *pdf = vec3::dot(uvw.w(), scattered.direction()) / rtweekend::PI;
         true
     }
 
@@ -85,6 +90,7 @@ impl Material for Metal {
         rec: &HitRecord,
         attenuation: &mut Color,
         scattered: &mut Ray,
+        _pdf: &mut f64,
     ) -> bool {
         let reflected = vec3::reflect(vec3::unit_vector(r_in.direction()), rec.normal);
         *scattered = Ray::new_with_time(
@@ -122,6 +128,7 @@ impl Material for Dielectric {
         rec: &HitRecord,
         attenuation: &mut Color,
         scattered: &mut Ray,
+        _pdf: &mut f64,
     ) -> bool {
         *attenuation = Color::new(1.0, 1.0, 1.0);
         let refraction_ratio = if rec.front_face {
@@ -172,6 +179,7 @@ impl Material for DiffuseLight {
         _rec: &HitRecord,
         _attenuation: &mut Color,
         _scattered: &mut Ray,
+        _pdf: &mut f64,
     ) -> bool {
         false
     }
@@ -203,6 +211,7 @@ impl Material for Isotropic {
         rec: &HitRecord,
         attenuation: &mut Color,
         scattered: &mut Ray,
+        _pdf: &mut f64,
     ) -> bool {
         *scattered = Ray::new_with_time(rec.p, vec3::random_unit_vector(), r_in.time());
         *attenuation = self.albedo.value(rec.u, rec.v, rec.p);

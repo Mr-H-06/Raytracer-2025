@@ -1,4 +1,4 @@
-use crate::rtweekend::{random_double, random_double_range};
+use crate::rtweekend::{PI, random_double, random_double_range};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Debug, Copy, Clone)]
@@ -205,6 +205,18 @@ pub fn random_on_hemisphere(normal: Vec3) -> Vec3 {
     } else {
         -on_unit_sphere
     }
+}
+
+pub fn random_cosine_direction() -> Vec3 {
+    let r1 = random_double();
+    let r2 = random_double();
+
+    let phi = 2.0 * PI * r1;
+    let x = phi.cos() * r2.sqrt();
+    let y = phi.sin() * r2.sqrt();
+    let z = (1.0 - r2).sqrt();
+
+    Vec3::new(x, y, z)
 }
 
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {

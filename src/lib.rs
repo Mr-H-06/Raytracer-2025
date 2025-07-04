@@ -7,6 +7,7 @@ pub mod hittable;
 pub mod hittable_list;
 pub mod interval;
 pub mod material;
+pub mod onb;
 pub mod perlin;
 pub mod quad;
 pub mod ray;
