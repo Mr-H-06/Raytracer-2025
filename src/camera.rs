@@ -39,7 +39,7 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book3/image4.png");
+        let path = std::path::Path::new("output/book3/image5.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -142,7 +142,7 @@ impl Camera {
             }
 
             let scattering_pdf = mat.scattering_pdf(r, &rec, &scattered);
-            let pdf = 1.0 / (2.0 * rtweekend::PI);
+            let pdf = scattering_pdf;
 
             let color_from_scatter =
                 (attenuation * scattering_pdf * self.ray_color(&scattered, depth - 1, world)) / pdf;
