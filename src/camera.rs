@@ -5,6 +5,7 @@ use indicatif::ProgressBar;
 use super::color::Color;
 use super::hittable::{HitRecord, Hittable};
 use super::interval::Interval;
+use super::pdf;
 use super::pdf::{HittablePdf, Pdf};
 use super::ray::Ray;
 use super::rtweekend;
@@ -39,7 +40,7 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable, lights: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book3/image10.png");
+        let path = std::path::Path::new("output/book3/image11.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -142,9 +143,12 @@ impl Camera {
                 return color_from_emission;
             }
 
-            let light_pdf = HittablePdf::new(lights, rec.p);
-            let scattered = Ray::new_with_time(rec.p, light_pdf.generate(), r.time());
-            let pdf = light_pdf.value(scattered.direction());
+            let p0 = HittablePdf::new(lights, rec.p);
+            let p1 = pdf::CosinePdf::new(rec.normal);
+            let mixed_pdf = pdf::MixturePdf::new(&p0, &p1);
+
+            let scattered = Ray::new_with_time(rec.p, mixed_pdf.generate(), r.time());
+            let pdf = mixed_pdf.value(scattered.direction());
 
             let scattering_pdf = mat.scattering_pdf(r, &rec, &scattered);
 
