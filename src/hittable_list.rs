@@ -1,5 +1,7 @@
 use super::hittable::{HitRecord, Hittable};
 use super::ray::Ray;
+use super::rtweekend;
+use super::vec3;
 use crate::aabb::Aabb;
 use crate::interval::Interval;
 use std::rc::Rc;
@@ -52,5 +54,21 @@ impl Hittable for HittableList {
 
     fn bounding_box(&self) -> &Aabb {
         &self.bbox
+    }
+
+    fn pdf_value(&self, origin: vec3::Point3, direction: vec3::Vec3) -> f64 {
+        let weight = 1.0 / self.objects.len() as f64;
+        let mut sum = 0.0;
+
+        for object in self.objects.iter() {
+            sum += weight * object.pdf_value(origin, direction);
+        }
+
+        sum
+    }
+
+    fn random(&self, origin: vec3::Point3) -> vec3::Vec3 {
+        let int_size = self.objects.len() as i32;
+        self.objects[rtweekend::random_int(0, int_size - 1) as usize].random(origin)
     }
 }

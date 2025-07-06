@@ -21,18 +21,18 @@ pub mod vec3;
 
 use std::rc::Rc;
 
-use crate::bvh::BvhNode;
+//use crate::bvh::BvhNode;
 use crate::camera::Camera;
-use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture, Texture};
+//use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture, Texture};
 use crate::vec3::Vec3;
 use color::Color;
 use hittable_list::HittableList;
-use material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
+use material::{/*Dielectric, */ DiffuseLight, Lambertian, Material /*, Metal*/};
 use quad::Quad;
-use sphere::Sphere;
+//use sphere::Sphere;
 use vec3::Point3;
 
-fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
+/*fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
     let mut boxes1 = HittableList::default();
     let ground: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.48, 0.83, 0.53)));
 
@@ -250,7 +250,7 @@ fn cornell_smoke() {
     cam.defocus_angle = 0.0;
 
     cam.render(&world);
-}
+}*/
 
 fn cornell_box() {
     let mut world = HittableList::default();
@@ -277,7 +277,7 @@ fn cornell_box() {
         Point3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        light,
+        Rc::clone(&light),
     )));
     world.add(Rc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
@@ -325,11 +325,19 @@ fn cornell_box() {
     let box2 = Rc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
     world.add(box2);
 
+    let mut lights = HittableList::default();
+    lights.add(Rc::new(Quad::new(
+        Point3::new(343.0, 554.0, 332.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
+        Rc::clone(&light),
+    )));
+
     let mut cam = Camera::default();
 
     cam.aspect_ratio = 1.0;
     cam.image_width = 600;
-    cam.samples_per_pixel = 1000;
+    cam.samples_per_pixel = 10;
     cam.max_depth = 50;
     cam.background = Color::default();
 
@@ -340,9 +348,9 @@ fn cornell_box() {
 
     cam.defocus_angle = 0.0;
 
-    cam.render(&world);
+    cam.render(&world, &lights);
 }
-fn simple_light() {
+/*fn simple_light() {
     let mut world = HittableList::default();
 
     let pertext: Rc<dyn Texture> = Rc::new(NoiseTexture::new(4.0));
@@ -630,9 +638,10 @@ fn checkered_spheres() {
     cam.defocus_angle = 0.0;
 
     cam.render(&world);
-}
+}*/
 
 fn main() {
+    /*
     match 7 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
@@ -644,5 +653,6 @@ fn main() {
         8 => cornell_smoke(),
         9 => final_scene(400, 300, 5),
         _ => final_scene(400, 250, 4),
-    }
+    }*/
+    cornell_box();
 }

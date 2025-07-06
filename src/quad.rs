@@ -1,9 +1,11 @@
 use super::aabb::Aabb;
 use super::hittable::{HitRecord, Hittable};
 use super::hittable_list::HittableList;
+use super::interval::Interval;
 use super::material::Material;
-use super::vec3::{Point3, Vec3};
-use crate::vec3;
+use super::ray::Ray;
+use super::rtweekend;
+use super::vec3::{self, Point3, Vec3};
 use std::rc::Rc;
 
 pub struct Quad {
@@ -15,6 +17,7 @@ pub struct Quad {
     d: f64,
     mat: Rc<dyn Material>,
     bbox: Aabb,
+    area: f64,
 }
 
 impl Quad {
@@ -30,6 +33,7 @@ impl Quad {
             d: vec3::dot(normal, q),
             mat,
             bbox: Aabb::default(),
+            area: n.length(),
         };
         res.set_bounding_box();
         res
@@ -51,12 +55,7 @@ impl Quad {
 }
 
 impl Hittable for Quad {
-    fn hit(
-        &self,
-        r: &crate::ray::Ray,
-        ray_t: &crate::interval::Interval,
-        rec: &mut HitRecord,
-    ) -> bool {
+    fn hit(&self, r: &Ray, ray_t: &Interval, rec: &mut HitRecord) -> bool {
         let denom = vec3::dot(self.normal, r.direction);
 
         if denom.abs() < 1e-8 {
@@ -84,6 +83,28 @@ impl Hittable for Quad {
 
     fn bounding_box(&self) -> &Aabb {
         &self.bbox
+    }
+
+    fn pdf_value(&self, origin: Point3, direction: Vec3) -> f64 {
+        let mut rec = HitRecord::default();
+        if !self.hit(
+            &Ray::new(origin, direction),
+            &Interval::new(0.0001, f64::INFINITY),
+            &mut rec,
+        ) {
+            return 0.0;
+        }
+
+        let distance_squared = rec.t * rec.t * direction.length_squared();
+        let cosine = (vec3::dot(direction, rec.normal) / direction.length()).abs();
+
+        distance_squared / (cosine * self.area)
+    }
+
+    fn random(&self, origin: Point3) -> Vec3 {
+        let p =
+            self.q + (rtweekend::random_double() * self.u) + (rtweekend::random_double() * self.v);
+        p - origin
     }
 }
 

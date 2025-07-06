@@ -5,7 +5,7 @@ use indicatif::ProgressBar;
 use super::color::Color;
 use super::hittable::{HitRecord, Hittable};
 use super::interval::Interval;
-use super::pdf::{CosinePdf, Pdf};
+use super::pdf::{HittablePdf, Pdf};
 use super::ray::Ray;
 use super::rtweekend;
 use super::vec3::{self, Point3, Vec3};
@@ -36,10 +36,10 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn render(&mut self, world: &dyn Hittable) {
+    pub fn render(&mut self, world: &dyn Hittable, lights: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book3/image9.png");
+        let path = std::path::Path::new("output/book3/image10.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -64,7 +64,7 @@ impl Camera {
                 for s_j in 0..self.sqrt_spp {
                     for s_i in 0..self.sqrt_spp {
                         let r = self.get_ray(i, j, s_i as u32, s_j as u32);
-                        pixel_color += self.ray_color(&r, self.max_depth, world);
+                        pixel_color += self.ray_color(&r, self.max_depth, world, lights);
                     }
                 }
 
@@ -123,7 +123,7 @@ impl Camera {
         self.defocus_disk_v = self.v * defocus_radius;
     }
 
-    fn ray_color(&self, r: &Ray, depth: i32, world: &dyn Hittable) -> Color {
+    fn ray_color(&self, r: &Ray, depth: i32, world: &dyn Hittable, lights: &dyn Hittable) -> Color {
         let mut rec = HitRecord::default();
 
         if depth <= 0 {
@@ -142,14 +142,16 @@ impl Camera {
                 return color_from_emission;
             }
 
-            let surface_pdf = CosinePdf::new(rec.normal);
-            scattered = Ray::new_with_time(rec.p, surface_pdf.generate(), r.time());
-            pdf = surface_pdf.value(scattered.direction());
+            let light_pdf = HittablePdf::new(lights, rec.p);
+            let scattered = Ray::new_with_time(rec.p, light_pdf.generate(), r.time());
+            let pdf = light_pdf.value(scattered.direction());
 
             let scattering_pdf = mat.scattering_pdf(r, &rec, &scattered);
 
-            let color_from_scatter =
-                (attenuation * scattering_pdf * self.ray_color(&scattered, depth - 1, world)) / pdf;
+            let color_from_scatter = (attenuation
+                * scattering_pdf
+                * self.ray_color(&scattered, depth - 1, world, lights))
+                / pdf;
 
             color_from_emission + color_from_scatter
         } else {
