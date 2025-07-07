@@ -1,5 +1,6 @@
 use super::hittable::{HitRecord, Hittable};
 use super::material::Material;
+use super::onb;
 use super::ray::Ray;
 use super::rtweekend;
 use super::vec3::{self, Point3, Vec3};
@@ -50,6 +51,18 @@ impl Sphere {
         let phi = (-p.z()).atan2(p.x()) + rtweekend::PI;
         (phi / (2.0 * rtweekend::PI), theta / rtweekend::PI)
     }
+
+    fn random_to_sphere(radius: f64, distance_squared: f64) -> Vec3 {
+        let r1 = rtweekend::random_double();
+        let r2 = rtweekend::random_double();
+        let z = 1.0 + r2 * ((1.0 - radius * radius / distance_squared).sqrt() - 1.0);
+
+        let phi = 2.0 * rtweekend::PI * r1;
+        let x = phi.cos() * (1.0 - z * z).sqrt();
+        let y = phi.sin() * (1.0 - z * z).sqrt();
+
+        Vec3::new(x, y, z)
+    }
 }
 
 impl Hittable for Sphere {
@@ -86,5 +99,30 @@ impl Hittable for Sphere {
 
     fn bounding_box(&self) -> &Aabb {
         &self.bbox
+    }
+
+    fn pdf_value(&self, origin: Point3, direction: Vec3) -> f64 {
+        let mut rec = HitRecord::default();
+        if !self.hit(
+            &Ray::new(origin, direction),
+            &Interval::new(0.001, rtweekend::INFINITY),
+            &mut rec,
+        ) {
+            return 0.0;
+        }
+
+        let cos_theta_max = (1.0
+            - self.radius * self.radius / (self.center.at(0.0) - origin).length_squared())
+        .sqrt();
+        let solid_angle = 2.0 * rtweekend::PI * (1.0 - cos_theta_max);
+
+        1.0 / solid_angle
+    }
+
+    fn random(&self, origin: Point3) -> Vec3 {
+        let direction = self.center.at(0.0) - origin;
+        let distance_squared = direction.length_squared();
+        let uvw = onb::Onb::new_from_w(direction);
+        uvw.local_v(Self::random_to_sphere(self.radius, distance_squared))
     }
 }
