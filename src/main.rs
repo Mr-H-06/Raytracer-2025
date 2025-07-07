@@ -341,6 +341,12 @@ fn cornell_box() {
         Rc::clone(&light),
     )));
 
+    lights.add(Rc::new(sphere::Sphere::new(
+        Point3::new(190.0, 90.0, 190.0),
+        90.0,
+        Rc::clone(&glass),
+    )));
+
     let mut cam = Camera::default();
 
     cam.aspect_ratio = 1.0;
