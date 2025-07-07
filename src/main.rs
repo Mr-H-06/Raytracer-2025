@@ -308,10 +308,12 @@ fn cornell_box() {
         Rc::clone(&white),
     ));*/
 
+    let aluminum: Rc<dyn Material> =
+        Rc::new(material::Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));
     let box1 = quad::make_box(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(165.0, 330.0, 165.0),
-        Rc::clone(&white),
+        Rc::clone(&aluminum),
     );
     let box1 = Rc::new(hittable::RotateY::new(box1, 15.0));
     let box1 = Rc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));

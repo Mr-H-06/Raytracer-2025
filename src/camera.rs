@@ -5,6 +5,7 @@ use indicatif::ProgressBar;
 use super::color::Color;
 use super::hittable::{HitRecord, Hittable};
 use super::interval::Interval;
+use super::material;
 use super::pdf;
 use super::pdf::{HittablePdf, Pdf};
 use super::ray::Ray;
@@ -40,7 +41,7 @@ impl Camera {
     pub fn render(&mut self, world: &dyn Hittable, lights: &dyn Hittable) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book3/image11.png");
+        let path = std::path::Path::new("output/book3/image12.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -135,24 +136,24 @@ impl Camera {
             return self.background;
         }
         if let Some(mat) = rec.mat.clone() {
-            let mut scattered = Ray::default();
-            let mut attenuation = Color::default();
-            let mut pdf = 0.0;
+            let mut srec = material::ScatterRecord::default();
             let color_from_emission = mat.emitted(r, &rec, rec.u, rec.v, rec.p);
-            if !mat.scatter(r, &rec, &mut attenuation, &mut scattered, &mut pdf) {
+            if !mat.scatter(r, &rec, &mut srec) {
                 return color_from_emission;
             }
-
-            let p0 = HittablePdf::new(lights, rec.p);
-            let p1 = pdf::CosinePdf::new(rec.normal);
-            let mixed_pdf = pdf::MixturePdf::new(&p0, &p1);
+            if srec.skip_pdf {
+                return srec.attenuation
+                    * self.ray_color(&srec.skip_pdf_ray, depth - 1, world, lights);
+            }
+            let light_pdf = HittablePdf::new(lights, rec.p);
+            let mixed_pdf = pdf::MixturePdf::new(&light_pdf, &*srec.pdf);
 
             let scattered = Ray::new_with_time(rec.p, mixed_pdf.generate(), r.time());
             let pdf = mixed_pdf.value(scattered.direction());
 
             let scattering_pdf = mat.scattering_pdf(r, &rec, &scattered);
 
-            let color_from_scatter = (attenuation
+            let color_from_scatter = (srec.attenuation
                 * scattering_pdf
                 * self.ray_color(&scattered, depth - 1, world, lights))
                 / pdf;
