@@ -30,6 +30,10 @@ impl Color {
         let g = self.y();
         let b = self.z();
 
+        let r = if r.is_nan() { 0.0 } else { r };
+        let g = if g.is_nan() { 0.0 } else { g };
+        let b = if b.is_nan() { 0.0 } else { b };
+
         let scale = 1.0 / samples_per_pixel as f64;
         let r = scale * r;
         let g = scale * g;
