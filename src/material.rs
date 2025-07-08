@@ -7,9 +7,9 @@ use super::ray::Ray;
 use super::rtweekend;
 use super::vec3::{self, Vec3};
 use crate::texture::{SolidColor, Texture};
-use std::rc::Rc;
+use std::sync::Arc;
 
-pub trait Material {
+pub trait Material: Send + Sync {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord, srec: &mut ScatterRecord) -> bool;
 
     fn emitted(&self, _r_in: &Ray, _rec: &HitRecord, _u: f64, _v: f64, _p: vec3::Point3) -> Color {
@@ -22,17 +22,17 @@ pub trait Material {
 }
 
 pub struct Lambertian {
-    pub albedo: Rc<dyn Texture>,
+    pub albedo: Arc<dyn Texture>,
 }
 
 impl Lambertian {
     pub fn new(a: Color) -> Self {
         Self {
-            albedo: Rc::new(SolidColor::new(a)),
+            albedo: Arc::new(SolidColor::new(a)),
         }
     }
 
-    pub fn new_with_texture(a: Rc<dyn Texture>) -> Self {
+    pub fn new_with_texture(a: Arc<dyn Texture>) -> Self {
         Self { albedo: a }
     }
 }
@@ -40,7 +40,7 @@ impl Lambertian {
 impl Material for Lambertian {
     fn scatter(&self, _r_in: &Ray, rec: &HitRecord, srec: &mut ScatterRecord) -> bool {
         srec.attenuation = self.albedo.value(rec.u, rec.v, rec.p);
-        srec.pdf = Box::new(CosinePdf::new(rec.normal));
+        srec.pdf = Arc::new(CosinePdf::new(rec.normal));
         srec.skip_pdf = false;
         true
     }
@@ -131,17 +131,17 @@ impl Material for Dielectric {
 }
 
 pub struct DiffuseLight {
-    pub emit: Rc<dyn Texture>,
+    pub emit: Arc<dyn Texture>,
 }
 
 impl DiffuseLight {
-    pub fn new(a: Rc<dyn Texture>) -> Self {
+    pub fn new(a: Arc<dyn Texture>) -> Self {
         Self { emit: a }
     }
 
     pub fn new_with_color(c: Color) -> Self {
         Self {
-            emit: Rc::new(SolidColor::new(c)),
+            emit: Arc::new(SolidColor::new(c)),
         }
     }
 }
@@ -161,17 +161,17 @@ impl Material for DiffuseLight {
 }
 
 pub struct Isotropic {
-    pub albedo: Rc<dyn Texture>,
+    pub albedo: Arc<dyn Texture>,
 }
 
 impl Isotropic {
-    pub fn new(a: Rc<dyn Texture>) -> Self {
+    pub fn new(a: Arc<dyn Texture>) -> Self {
         Self { albedo: a }
     }
 
     pub fn new_with_color(c: Color) -> Self {
         Self {
-            albedo: Rc::new(SolidColor::new(c)),
+            albedo: Arc::new(SolidColor::new(c)),
         }
     }
 }
@@ -179,7 +179,7 @@ impl Isotropic {
 impl Material for Isotropic {
     fn scatter(&self, _r_in: &Ray, rec: &HitRecord, srec: &mut ScatterRecord) -> bool {
         srec.attenuation = self.albedo.value(rec.u, rec.v, rec.p);
-        srec.pdf = Box::new(SpherePdf {});
+        srec.pdf = Arc::new(SpherePdf {});
         srec.skip_pdf = false;
         true
     }
@@ -203,7 +203,7 @@ impl Pdf for NonePdf {
 
 pub struct ScatterRecord {
     pub attenuation: Color,
-    pub pdf: Box<dyn Pdf>,
+    pub pdf: Arc<dyn Pdf>,
     pub skip_pdf: bool,
     pub skip_pdf_ray: Ray,
 }
@@ -212,7 +212,7 @@ impl Default for ScatterRecord {
     fn default() -> Self {
         Self {
             attenuation: Color::default(),
-            pdf: Box::new(NonePdf {}),
+            pdf: Arc::new(NonePdf {}),
             skip_pdf: false,
             skip_pdf_ray: Ray::default(),
         }

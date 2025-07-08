@@ -2,6 +2,9 @@ use console::style;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 
+use rayon::prelude::*;
+use std::sync::Arc;
+
 use super::color::Color;
 use super::hittable::{HitRecord, Hittable};
 use super::interval::Interval;
@@ -38,10 +41,10 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn render(&mut self, world: &dyn Hittable, lights: &dyn Hittable) {
+    pub fn render(&mut self, world: Arc<dyn Hittable>, lights: Arc<dyn Hittable>) {
         self.initialize();
 
-        let path = std::path::Path::new("output/book3/image15.png");
+        let path = std::path::Path::new("output/work/image1.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -53,29 +56,44 @@ impl Camera {
             ProgressBar::new((self.image_height * self.image_width) as u64)
         };
 
-        // different from the book, we use image crate to create a .png image rather than outputting .ppm file, which is not widely used.
-        // anyway, you may output any image format you like.
+        let pixels: Vec<Color> = (0..self.image_height)
+            .into_par_iter()
+            .flat_map(|j| {
+                let thread_world = Arc::clone(&world);
+                let thread_lights = Arc::clone(&lights);
+
+                let row_pixels = (0..self.image_width)
+                    .map(|i| {
+                        let mut pixel_color = Color::default();
+                        for s_j in 0..self.sqrt_spp {
+                            for s_i in 0..self.sqrt_spp {
+                                let r = self.get_ray(i, j, s_i as u32, s_j as u32);
+                                pixel_color += self.ray_color(
+                                    &r,
+                                    self.max_depth,
+                                    &thread_world,
+                                    &thread_lights,
+                                );
+                            }
+                        }
+                        pixel_color
+                    })
+                    .collect::<Vec<Color>>();
+
+                progress.inc(1);
+                row_pixels
+            })
+            .collect();
+
+        progress.finish();
+
         for j in 0..self.image_height {
             for i in 0..self.image_width {
-                let mut pixel_color = Color::default();
-
-                /*for _ in 0..self.samples_per_pixel {
-                    let r = self.get_ray(i, j);
-                    pixel_color += self.ray_color(&r, self.max_depth, world);
-                }*/
-                for s_j in 0..self.sqrt_spp {
-                    for s_i in 0..self.sqrt_spp {
-                        let r = self.get_ray(i, j, s_i as u32, s_j as u32);
-                        pixel_color += self.ray_color(&r, self.max_depth, world, lights);
-                    }
-                }
-
+                let index = (j * self.image_width + i) as usize;
                 let pixel = img.get_pixel_mut(i, j);
-                *pixel = pixel_color.to_color(self.samples_per_pixel);
+                *pixel = pixels[index].to_color(self.samples_per_pixel);
             }
-            progress.inc(1);
         }
-        progress.finish();
 
         println!(
             "Output image as \"{}\"",
@@ -125,7 +143,13 @@ impl Camera {
         self.defocus_disk_v = self.v * defocus_radius;
     }
 
-    fn ray_color(&self, r: &Ray, depth: i32, world: &dyn Hittable, lights: &dyn Hittable) -> Color {
+    fn ray_color(
+        &self,
+        r: &Ray,
+        depth: i32,
+        world: &Arc<dyn Hittable>,
+        lights: &Arc<dyn Hittable>,
+    ) -> Color {
         let mut rec = HitRecord::default();
 
         if depth <= 0 {
@@ -145,8 +169,8 @@ impl Camera {
                 return srec.attenuation
                     * self.ray_color(&srec.skip_pdf_ray, depth - 1, world, lights);
             }
-            let light_pdf = HittablePdf::new(lights, rec.p);
-            let mixed_pdf = pdf::MixturePdf::new(&light_pdf, &*srec.pdf);
+            let light_pdf = HittablePdf::new(Arc::clone(lights), rec.p);
+            let mixed_pdf = pdf::MixturePdf::new(light_pdf, Arc::clone(&srec.pdf));
 
             let scattered = Ray::new_with_time(rec.p, mixed_pdf.generate(), r.time());
             let pdf = mixed_pdf.value(scattered.direction());

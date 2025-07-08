@@ -19,22 +19,22 @@ pub mod sphere;
 pub mod texture;
 pub mod vec3;
 
-use std::rc::Rc;
+use std::sync::Arc;
 
-//use crate::bvh::BvhNode;
+use crate::bvh::BvhNode;
 use crate::camera::Camera;
-//use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture, Texture};
+use crate::texture::{/*CheckerTexture,*/ ImageTexture, NoiseTexture /*, Texture*/};
 use crate::vec3::Vec3;
 use color::Color;
 use hittable_list::HittableList;
-use material::{/*Dielectric, */ DiffuseLight, Lambertian, Material /*, Metal*/};
+use material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
 use quad::Quad;
-//use sphere::Sphere;
+use sphere::Sphere;
 use vec3::Point3;
 
-/*fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
+fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
     let mut boxes1 = HittableList::default();
-    let ground: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.48, 0.83, 0.53)));
+    let ground: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.48, 0.83, 0.53)));
 
     let boxes_per_side = 20;
     (0..boxes_per_side).for_each(|i| {
@@ -50,98 +50,107 @@ use vec3::Point3;
             boxes1.add(quad::make_box(
                 Point3::new(x0, y0, z0),
                 Point3::new(x1, y1, z1),
-                Rc::clone(&ground),
+                Arc::clone(&ground),
             ));
         });
     });
 
     let mut world = HittableList::default();
 
-    world.add(Rc::new(BvhNode::new(&mut boxes1)));
+    world.add(Arc::new(BvhNode::new(&mut boxes1)));
 
-    let light: Rc<dyn Material> = Rc::new(DiffuseLight::new_with_color(Color::new(7.0, 7.0, 7.0)));
-    world.add(Rc::new(Quad::new(
+    let light: Arc<dyn Material> =
+        Arc::new(DiffuseLight::new_with_color(Color::new(7.0, 7.0, 7.0)));
+    world.add(Arc::new(Quad::new(
         Point3::new(123.0, 554.0, 147.0),
         Vec3::new(300.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 265.0),
-        light,
+        Arc::clone(&light),
     )));
 
     let center1 = Point3::new(400.0, 400.0, 200.0);
     let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);
-    let sphere_material: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.7, 0.3, 0.1)));
-    world.add(Rc::new(Sphere::new_with_center2(
+    let sphere_material: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.1)));
+    world.add(Arc::new(Sphere::new_with_center2(
         center1,
         center2,
         50.0,
         sphere_material,
     )));
 
-    world.add(Rc::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Point3::new(260.0, 150.0, 45.0),
         50.0,
-        Rc::new(Dielectric::new(1.5)),
+        Arc::new(Dielectric::new(1.5)),
     )));
-    world.add(Rc::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 150.0, 145.0),
         50.0,
-        Rc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)),
+        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)),
     )));
 
-    let boundary: Rc<dyn hittable::Hittable> = Rc::new(Sphere::new(
+    let boundary: Arc<dyn hittable::Hittable> = Arc::new(Sphere::new(
         Point3::new(360.0, 150.0, 145.0),
         70.0,
-        Rc::new(Dielectric::new(1.5)),
+        Arc::new(Dielectric::new(1.5)),
     ));
-    world.add(Rc::clone(&boundary));
-    world.add(Rc::new(constant_medium::ConstantMedium::new_with_color(
-        Rc::clone(&boundary),
+    world.add(Arc::clone(&boundary));
+    world.add(Arc::new(constant_medium::ConstantMedium::new_with_color(
+        Arc::clone(&boundary),
         0.2,
         Color::new(0.2, 0.4, 0.9),
     )));
-    let boundary: Rc<dyn hittable::Hittable> = Rc::new(Sphere::new(
+    let boundary: Arc<dyn hittable::Hittable> = Arc::new(Sphere::new(
         Point3::new(0.0, 0.0, 0.0),
         5000.0,
-        Rc::new(Dielectric::new(1.5)),
+        Arc::new(Dielectric::new(1.5)),
     ));
-    world.add(Rc::new(constant_medium::ConstantMedium::new_with_color(
-        Rc::clone(&boundary),
+    world.add(Arc::new(constant_medium::ConstantMedium::new_with_color(
+        Arc::clone(&boundary),
         0.0001,
         Color::new(1.0, 1.0, 1.0),
     )));
 
-    let emat: Rc<dyn Material> = Rc::new(Lambertian::new_with_texture(Rc::new(ImageTexture::new(
-        "earthmap.jpg",
-    ))));
-    world.add(Rc::new(Sphere::new(
+    let emat: Arc<dyn Material> = Arc::new(Lambertian::new_with_texture(Arc::new(
+        ImageTexture::new("earthmap.jpg"),
+    )));
+    world.add(Arc::new(Sphere::new(
         Point3::new(400.0, 200.0, 400.0),
         100.0,
         emat,
     )));
-    let pertext = Rc::new(NoiseTexture::new(0.2));
-    world.add(Rc::new(Sphere::new(
+    let pertext = Arc::new(NoiseTexture::new(0.2));
+    world.add(Arc::new(Sphere::new(
         Point3::new(220.0, 280.0, 300.0),
         80.0,
-        Rc::new(Lambertian::new_with_texture(pertext)),
+        Arc::new(Lambertian::new_with_texture(pertext)),
     )));
 
     let mut boxes2 = HittableList::default();
-    let white: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let white: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
     let ns = 1000;
     (0..ns).for_each(|_| {
-        boxes2.add(Rc::new(Sphere::new(
+        boxes2.add(Arc::new(Sphere::new(
             Point3::random_range(0.0, 165.0),
             10.0,
-            Rc::clone(&white),
+            Arc::clone(&white),
         )));
     });
 
-    world.add(Rc::new(hittable::Translate::new(
-        Rc::new(hittable::RotateY::new(
-            Rc::new(BvhNode::new(&mut boxes2)),
+    world.add(Arc::new(hittable::Translate::new(
+        Arc::new(hittable::RotateY::new(
+            Arc::new(BvhNode::new(&mut boxes2)),
             15.0,
         )),
         Vec3::new(-100.0, 270.0, 395.0),
+    )));
+
+    let mut lights = HittableList::default();
+    lights.add(Arc::new(Quad::new(
+        Point3::new(123.0, 554.0, 147.0),
+        Vec3::new(300.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 265.0),
+        light,
     )));
 
     let mut cam = Camera::default();
@@ -159,76 +168,76 @@ use vec3::Point3;
 
     cam.defocus_angle = 0.0;
 
-    cam.render(&world);
+    cam.render(Arc::new(world), Arc::new(lights));
 }
 
-fn cornell_smoke() {
+/*fn cornell_smoke() {
     let mut world = HittableList::default();
 
-    let red: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
-    let white: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
-    let green: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
-    let light: Rc<dyn Material> = Rc::new(DiffuseLight::new_with_color(Color::new(7.0, 7.0, 7.0)));
+    let red: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
+    let white: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let green: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
+    let light: Arc<dyn Material> = Arc::new(DiffuseLight::new_with_color(Color::new(7.0, 7.0, 7.0)));
 
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         green,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         red,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(113.0, 554.0, 127.0),
         Vec3::new(330.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 305.0),
         light,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(0.0, 555.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 555.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     )));
 
     let box1 = quad::make_box(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(165.0, 330.0, 165.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     );
-    let box1 = Rc::new(hittable::RotateY::new(box1, 15.0));
-    let box1 = Rc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
+    let box1 = Arc::new(hittable::RotateY::new(box1, 15.0));
+    let box1 = Arc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
 
     let box2 = quad::make_box(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(165.0, 165.0, 165.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     );
-    let box2 = Rc::new(hittable::RotateY::new(box2, -18.0));
-    let box2 = Rc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
+    let box2 = Arc::new(hittable::RotateY::new(box2, -18.0));
+    let box2 = Arc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
 
-    world.add(Rc::new(constant_medium::ConstantMedium::new_with_color(
+    world.add(Arc::new(constant_medium::ConstantMedium::new_with_color(
         box1,
         0.01,
         Color::new(0.0, 0.0, 0.0),
     )));
-    world.add(Rc::new(constant_medium::ConstantMedium::new_with_color(
+    world.add(Arc::new(constant_medium::ConstantMedium::new_with_color(
         box2,
         0.01,
         Color::new(1.0, 1.0, 1.0),
@@ -255,96 +264,96 @@ fn cornell_smoke() {
 fn cornell_box() {
     let mut world = HittableList::default();
 
-    let red: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
-    let white: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
-    let green: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
-    let light: Rc<dyn Material> =
-        Rc::new(DiffuseLight::new_with_color(Color::new(15.0, 15.0, 15.0)));
+    let red: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
+    let white: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let green: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
+    let light: Arc<dyn Material> =
+        Arc::new(DiffuseLight::new_with_color(Color::new(15.0, 15.0, 15.0)));
 
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         green,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         red,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        Rc::clone(&light),
+        Arc::clone(&light),
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(555.0, 555.0, 555.0),
         Vec3::new(-555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -555.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 555.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     )));
     /*world.add(quad::make_box(
         Point3::new(130.0, 0.0, 65.0),
         Point3::new(295.0, 165.0, 230.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     ));
     world.add(quad::make_box(
         Point3::new(265.0, 0.0, 295.0),
         Point3::new(430.0, 330.0, 460.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     ));*/
 
-    /*let aluminum: Rc<dyn Material> =
-    Rc::new(material::Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));*/
+    /*let aluminum: Arc<dyn Material> =
+    Arc::new(material::Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));*/
     let box1 = quad::make_box(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(165.0, 330.0, 165.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     );
-    let box1 = Rc::new(hittable::RotateY::new(box1, 15.0));
-    let box1 = Rc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
+    let box1 = Arc::new(hittable::RotateY::new(box1, 15.0));
+    let box1 = Arc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
     world.add(box1);
     /*let box2 = quad::make_box(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(165.0, 165.0, 165.0),
-        Rc::clone(&white),
+        Arc::clone(&white),
     );
-    let box2 = Rc::new(hittable::RotateY::new(box2, -18.0));
-    let box2 = Rc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
+    let box2 = Arc::new(hittable::RotateY::new(box2, -18.0));
+    let box2 = Arc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
     world.add(box2);*/
-    let glass: Rc<dyn Material> = Rc::new(material::Dielectric::new(1.5));
-    world.add(Rc::new(sphere::Sphere::new(
+    let glass: Arc<dyn Material> = Arc::new(Dielectric::new(1.5));
+    world.add(Arc::new(Sphere::new(
         Point3::new(190.0, 90.0, 190.0),
         90.0,
-        Rc::clone(&glass),
+        Arc::clone(&glass),
     )));
 
     let mut lights = HittableList::default();
-    lights.add(Rc::new(Quad::new(
+    lights.add(Arc::new(Quad::new(
         Point3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        Rc::clone(&light),
+        Arc::clone(&light),
     )));
 
-    lights.add(Rc::new(sphere::Sphere::new(
+    lights.add(Arc::new(Sphere::new(
         Point3::new(190.0, 90.0, 190.0),
         90.0,
-        Rc::clone(&glass),
+        Arc::clone(&glass),
     )));
 
     let mut cam = Camera::default();
@@ -362,31 +371,31 @@ fn cornell_box() {
 
     cam.defocus_angle = 0.0;
 
-    cam.render(&world, &lights);
+    cam.render(Arc::new(world), Arc::new(lights));
 }
 /*fn simple_light() {
     let mut world = HittableList::default();
 
-    let pertext: Rc<dyn Texture> = Rc::new(NoiseTexture::new(4.0));
-    world.add(Rc::new(Sphere::new(
+    let pertext: Arc<dyn Texture> = Arc::new(NoiseTexture::new(4.0));
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Rc::new(Lambertian::new_with_texture(Rc::clone(&pertext))),
+        Arc::new(Lambertian::new_with_texture(Arc::clone(&pertext))),
     )));
-    world.add(Rc::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 2.0, 0.0),
         2.0,
-        Rc::new(Lambertian::new_with_texture(pertext)),
+        Arc::new(Lambertian::new_with_texture(pertext)),
     )));
 
-    let difflight: Rc<dyn Material> =
-        Rc::new(DiffuseLight::new_with_color(Color::new(4.0, 4.0, 4.0)));
-    world.add(Rc::new(Sphere::new(
+    let difflight: Arc<dyn Material> =
+        Arc::new(DiffuseLight::new_with_color(Color::new(4.0, 4.0, 4.0)));
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 7.0, 0.0),
         2.0,
-        Rc::clone(&difflight),
+        Arc::clone(&difflight),
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(3.0, 1.0, -2.0),
         Vec3::new(2.0, 0.0, 0.0),
         Vec3::new(0.0, 2.0, 0.0),
@@ -415,38 +424,38 @@ fn quads() {
     let mut world = HittableList::default();
 
     // Material
-    let left_red: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(1.0, 0.2, 0.2)));
-    let back_green: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.2, 1.0, 0.2)));
-    let right_blue: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.2, 0.2, 1.0)));
-    let upper_orange: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(1.0, 0.5, 0.0)));
-    let lower_teal: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.2, 0.8, 0.8)));
+    let left_red: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(1.0, 0.2, 0.2)));
+    let back_green: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.2, 1.0, 0.2)));
+    let right_blue: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.2, 0.2, 1.0)));
+    let upper_orange: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(1.0, 0.5, 0.0)));
+    let lower_teal: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.2, 0.8, 0.8)));
 
     // Quad
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(-3.0, -2.0, 5.0),
         Vec3::new(0.0, 0.0, -4.0),
         Vec3::new(0.0, 4.0, 0.0),
         left_red,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(-2.0, -2.0, 0.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 4.0, 0.0),
         back_green,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(3.0, -2.0, 1.0),
         Vec3::new(0.0, 0.0, 4.0),
         Vec3::new(0.0, 4.0, 0.0),
         right_blue,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(-2.0, 3.0, 1.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 4.0),
         upper_orange,
     )));
-    world.add(Rc::new(Quad::new(
+    world.add(Arc::new(Quad::new(
         Point3::new(-2.0, -3.0, 5.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -4.0),
@@ -474,16 +483,16 @@ fn quads() {
 fn perlin_spheres() {
     let mut world = HittableList::default();
 
-    let pertext: Rc<dyn Texture> = Rc::new(NoiseTexture::new(4.0));
-    world.add(Rc::new(Sphere::new(
+    let pertext: Arc<dyn Texture> = Arc::new(NoiseTexture::new(4.0));
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Rc::new(Lambertian::new_with_texture(Rc::clone(&pertext))),
+        Arc::new(Lambertian::new_with_texture(Arc::clone(&pertext))),
     )));
-    world.add(Rc::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 2.0, 0.0),
         2.0,
-        Rc::new(Lambertian::new_with_texture(Rc::clone(&pertext))),
+        Arc::new(Lambertian::new_with_texture(Arc::clone(&pertext))),
     )));
 
     let mut cam = Camera::default();
@@ -505,10 +514,10 @@ fn perlin_spheres() {
 }
 
 fn earth() {
-    let earth_texture: Rc<dyn Texture> = Rc::new(ImageTexture::new("earthmap.jpg"));
-    let earth_surface: Rc<dyn Material> =
-        Rc::new(Lambertian::new_with_texture(Rc::clone(&earth_texture)));
-    let globe = Rc::new(Sphere::new(Point3::new(0.0, 0.0, 0.0), 2.0, earth_surface));
+    let earth_texture: Arc<dyn Texture> = Arc::new(ImageTexture::new("earthmap.jpg"));
+    let earth_surface: Arc<dyn Material> =
+        Arc::new(Lambertian::new_with_texture(Arc::clone(&earth_texture)));
+    let globe = Arc::new(Sphere::new(Point3::new(0.0, 0.0, 0.0), 2.0, earth_surface));
 
     let mut cam = Camera::default();
 
@@ -532,8 +541,8 @@ fn bouncing_spheres() {
     // World
     let mut world = HittableList::default();
 
-    let ground_material: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-    world.add(Rc::new(Sphere::new(
+    let ground_material: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
         ground_material,
@@ -550,22 +559,22 @@ fn bouncing_spheres() {
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 let mut center2 = center;
-                let sphere_material: Rc<dyn Material> = if choose_mat < 0.8 {
+                let sphere_material: Arc<dyn Material> = if choose_mat < 0.8 {
                     center2 =
                         center + Vec3::new(0.0, rtweekend::random_double_range(0.0, 0.5), 0.0);
                     // diffuse
                     let albedo = Color::random() * Color::random();
-                    Rc::new(Lambertian::new(albedo))
+                    Arc::new(Lambertian::new(albedo))
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);
                     let fuzz = rtweekend::random_double_range(0.0, 0.5);
-                    Rc::new(Metal::new(albedo, fuzz))
+                    Arc::new(Metal::new(albedo, fuzz))
                 } else {
                     // glass
-                    Rc::new(Dielectric::new(1.5))
+                    Arc::new(Dielectric::new(1.5))
                 };
-                world.add(Rc::new(Sphere::new_with_center2(
+                world.add(Arc::new(Sphere::new_with_center2(
                     center,
                     center2,
                     0.2,
@@ -575,28 +584,28 @@ fn bouncing_spheres() {
         }
     }
 
-    let material1: Rc<dyn Material> = Rc::new(Dielectric::new(1.5));
-    world.add(Rc::new(Sphere::new(
+    let material1: Arc<dyn Material> = Arc::new(Dielectric::new(1.5));
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
         material1,
     )));
 
-    let material2: Rc<dyn Material> = Rc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    world.add(Rc::new(Sphere::new(
+    let material2: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    world.add(Arc::new(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
         material2,
     )));
 
-    let material3: Rc<dyn Material> = Rc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    world.add(Rc::new(Sphere::new(
+    let material3: Arc<dyn Material> = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    world.add(Arc::new(Sphere::new(
         Point3::new(4.0, 1.0, 0.0),
         1.0,
         material3,
     )));
 
-    let world = HittableList::new_with_object(Rc::new(BvhNode::new(&mut world)));
+    let world = HittableList::new_with_object(Arc::new(BvhNode::new(&mut world)));
 
     // Camera
     let mut cam = Camera::default();
@@ -620,21 +629,21 @@ fn bouncing_spheres() {
 fn checkered_spheres() {
     let mut world = HittableList::default();
 
-    let checker: Rc<dyn Texture> = Rc::new(CheckerTexture::new_with_color(
+    let checker: Arc<dyn Texture> = Arc::new(CheckerTexture::new_with_color(
         0.32,
         Color::new(0.2, 0.3, 0.1),
         Color::new(0.9, 0.9, 0.9),
     ));
 
-    world.add(Rc::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, -10.0, 0.0),
         10.0,
-        Rc::new(Lambertian::new_with_texture(Rc::clone(&checker))),
+        Arc::new(Lambertian::new_with_texture(Arc::clone(&checker))),
     )));
-    world.add(Rc::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 10.0, 0.0),
         10.0,
-        Rc::new(Lambertian::new_with_texture(Rc::clone(&checker))),
+        Arc::new(Lambertian::new_with_texture(Arc::clone(&checker))),
     )));
 
     let mut cam = Camera::default();
@@ -668,5 +677,6 @@ fn main() {
         9 => final_scene(400, 300, 5),
         _ => final_scene(400, 250, 4),
     }*/
-    cornell_box();
+    final_scene(800, 10000, 40);
+    //cornell_box();
 }

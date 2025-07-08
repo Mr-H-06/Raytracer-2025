@@ -4,11 +4,11 @@ use super::rtweekend;
 use super::vec3;
 use crate::aabb::Aabb;
 use crate::interval::Interval;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Default)]
 pub struct HittableList {
-    pub objects: Vec<Rc<dyn Hittable>>,
+    pub objects: Vec<Arc<dyn Hittable>>,
 
     bbox: Aabb,
 }
@@ -18,7 +18,7 @@ impl HittableList {
         HittableList::default()
     }
 
-    pub fn new_with_object(object: Rc<dyn Hittable>) -> Self {
+    pub fn new_with_object(object: Arc<dyn Hittable>) -> Self {
         Self {
             objects: vec![object],
             bbox: Aabb::default(),
@@ -29,7 +29,7 @@ impl HittableList {
         self.objects.clear();
     }
 
-    pub fn add(&mut self, object: Rc<dyn Hittable>) {
+    pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.bbox = Aabb::new_with_box(&self.bbox, object.bounding_box());
         self.objects.push(object);
     }

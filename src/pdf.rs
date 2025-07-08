@@ -2,8 +2,9 @@ use super::hittable;
 use super::onb;
 use super::rtweekend;
 use super::vec3;
+use std::sync::Arc;
 
-pub trait Pdf {
+pub trait Pdf: Send + Sync {
     fn value(&self, direction: vec3::Vec3) -> f64;
     fn generate(&self) -> vec3::Vec3;
 }
@@ -43,18 +44,18 @@ impl Pdf for CosinePdf {
     }
 }
 
-pub struct HittablePdf<'a> {
-    pub objects: &'a dyn hittable::Hittable,
+pub struct HittablePdf {
+    pub objects: Arc<dyn hittable::Hittable>,
     pub origin: vec3::Point3,
 }
 
-impl<'a> HittablePdf<'a> {
-    pub fn new(objects: &'a dyn hittable::Hittable, origin: vec3::Point3) -> Self {
-        Self { objects, origin }
+impl HittablePdf {
+    pub fn new(objects: Arc<dyn hittable::Hittable>, origin: vec3::Point3) -> Arc<Self> {
+        Arc::new(Self { objects, origin })
     }
 }
 
-impl Pdf for HittablePdf<'_> {
+impl Pdf for HittablePdf {
     fn value(&self, direction: vec3::Vec3) -> f64 {
         self.objects.pdf_value(self.origin, direction)
     }
@@ -64,17 +65,17 @@ impl Pdf for HittablePdf<'_> {
     }
 }
 
-pub struct MixturePdf<'a> {
-    pub p: [&'a dyn Pdf; 2],
+pub struct MixturePdf {
+    pub p: [Arc<dyn Pdf>; 2],
 }
 
-impl<'a> MixturePdf<'a> {
-    pub fn new(p0: &'a dyn Pdf, p1: &'a dyn Pdf) -> Self {
+impl MixturePdf {
+    pub fn new(p0: Arc<dyn Pdf>, p1: Arc<dyn Pdf>) -> Self {
         Self { p: [p0, p1] }
     }
 }
 
-impl Pdf for MixturePdf<'_> {
+impl Pdf for MixturePdf {
     fn value(&self, direction: vec3::Vec3) -> f64 {
         0.5 * self.p[0].value(direction) + 0.5 * self.p[1].value(direction)
     }

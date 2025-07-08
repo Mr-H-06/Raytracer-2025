@@ -2,9 +2,9 @@ use super::color::Color;
 use super::perlin::Perlin;
 use super::rtw_stb_image::RtwImage;
 use super::vec3::Point3;
-use std::rc::Rc;
+use std::sync::Arc;
 
-pub trait Texture {
+pub trait Texture: Send + Sync {
     fn value(&self, u: f64, v: f64, p: Point3) -> Color;
 }
 
@@ -31,12 +31,12 @@ impl Texture for SolidColor {
 }
 pub struct CheckerTexture {
     inv_scale: f64,
-    even: Rc<dyn Texture>,
-    odd: Rc<dyn Texture>,
+    even: Arc<dyn Texture>,
+    odd: Arc<dyn Texture>,
 }
 
 impl CheckerTexture {
-    pub fn new(scale: f64, even: Rc<dyn Texture>, odd: Rc<dyn Texture>) -> Self {
+    pub fn new(scale: f64, even: Arc<dyn Texture>, odd: Arc<dyn Texture>) -> Self {
         Self {
             inv_scale: 1.0 / scale,
             even,
@@ -47,8 +47,8 @@ impl CheckerTexture {
     pub fn new_with_color(scale: f64, c1: Color, c2: Color) -> Self {
         Self {
             inv_scale: 1.0 / scale,
-            even: Rc::new(SolidColor::new(c1)),
-            odd: Rc::new(SolidColor::new(c2)),
+            even: Arc::new(SolidColor::new(c1)),
+            odd: Arc::new(SolidColor::new(c2)),
         }
     }
 }

@@ -6,18 +6,18 @@ use super::rtweekend;
 use super::vec3::{self, Point3, Vec3};
 use crate::aabb::Aabb;
 use crate::interval::Interval;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct Sphere {
     center: Ray,
     radius: f64,
-    mat: Rc<dyn Material>,
+    mat: Arc<dyn Material>,
 
     bbox: Aabb,
 }
 
 impl Sphere {
-    pub fn new(static_center: Point3, radius: f64, material: Rc<dyn Material>) -> Self {
+    pub fn new(static_center: Point3, radius: f64, material: Arc<dyn Material>) -> Self {
         let rvec = Vec3::new(radius, radius, radius);
         Self {
             center: Ray::new(static_center, Vec3::zero()),
@@ -32,7 +32,7 @@ impl Sphere {
         center1: Point3,
         center2: Point3,
         radius: f64,
-        material: Rc<dyn Material>,
+        material: Arc<dyn Material>,
     ) -> Self {
         let rvec = Vec3::new(radius, radius, radius);
         let box1 = Aabb::new_with_point(&(center1 - rvec), &(center1 + rvec));
@@ -92,7 +92,7 @@ impl Hittable for Sphere {
         let outward_normal = (hit_record.p - current_center) / self.radius;
         hit_record.set_face_normal(r, outward_normal);
         (hit_record.u, hit_record.v) = Self::get_sphere_uv(outward_normal);
-        hit_record.mat = Some(Rc::clone(&self.mat));
+        hit_record.mat = Some(Arc::clone(&self.mat));
 
         true
     }

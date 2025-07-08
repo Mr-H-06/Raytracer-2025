@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use super::aabb::Aabb;
 use super::color::Color;
@@ -11,24 +11,24 @@ use super::texture::Texture;
 use super::vec3::Vec3;
 
 pub struct ConstantMedium {
-    boundary: Rc<dyn Hittable>,
+    boundary: Arc<dyn Hittable>,
     neg_inv_density: f64,
-    phase_function: Rc<dyn Material>,
+    phase_function: Arc<dyn Material>,
 }
 
 impl ConstantMedium {
-    pub fn new(b: Rc<dyn Hittable>, d: f64, a: Rc<dyn Texture>) -> Self {
+    pub fn new(b: Arc<dyn Hittable>, d: f64, a: Arc<dyn Texture>) -> Self {
         Self {
             boundary: b,
             neg_inv_density: -1.0 / d,
-            phase_function: Rc::new(Isotropic::new(a)),
+            phase_function: Arc::new(Isotropic::new(a)),
         }
     }
-    pub fn new_with_color(b: Rc<dyn Hittable>, d: f64, c: Color) -> Self {
+    pub fn new_with_color(b: Arc<dyn Hittable>, d: f64, c: Color) -> Self {
         Self {
             boundary: b,
             neg_inv_density: -1.0 / d,
-            phase_function: Rc::new(Isotropic::new_with_color(c)),
+            phase_function: Arc::new(Isotropic::new_with_color(c)),
         }
     }
 }
@@ -92,7 +92,7 @@ impl Hittable for ConstantMedium {
 
         rec.normal = Vec3::new(1.0, 0.0, 0.0); // arbitrary
         rec.front_face = true; // also arbitrary
-        rec.mat = Some(Rc::clone(&self.phase_function));
+        rec.mat = Some(Arc::clone(&self.phase_function));
 
         true
     }
