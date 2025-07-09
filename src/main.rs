@@ -677,6 +677,6 @@ fn main() {
         9 => final_scene(400, 300, 5),
         _ => final_scene(400, 250, 4),
     }*/
-    final_scene(800, 10000, 40);
+    final_scene(800, 2000, 40);
     //cornell_box();
 }
