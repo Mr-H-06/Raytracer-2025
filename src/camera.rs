@@ -56,32 +56,27 @@ impl Camera {
             ProgressBar::new((self.image_height * self.image_width) as u64)
         };
 
-        let pixels: Vec<Color> = (0..self.image_height)
+        let pixel_coords: Vec<(u32, u32)> = (0..self.image_height)
+            .flat_map(|j| (0..self.image_width).map(move |i| (i, j)))
+            .collect();
+
+        let pixels: Vec<Color> = pixel_coords
             .into_par_iter()
-            .flat_map(|j| {
+            .map(|(i, j)| {
+                // Arc::clone 只需克隆一次，因为每个任务只处理一个像素
                 let thread_world = Arc::clone(&world);
                 let thread_lights = Arc::clone(&lights);
 
-                let row_pixels = (0..self.image_width)
-                    .map(|i| {
-                        let mut pixel_color = Color::default();
-                        for s_j in 0..self.sqrt_spp {
-                            for s_i in 0..self.sqrt_spp {
-                                let r = self.get_ray(i, j, s_i as u32, s_j as u32);
-                                pixel_color += self.ray_color(
-                                    &r,
-                                    self.max_depth,
-                                    &thread_world,
-                                    &thread_lights,
-                                );
-                            }
-                        }
-                        pixel_color
-                    })
-                    .collect::<Vec<Color>>();
-
+                let mut pixel_color = Color::default();
+                for s_j in 0..self.sqrt_spp {
+                    for s_i in 0..self.sqrt_spp {
+                        let r = self.get_ray(i, j, s_i as u32, s_j as u32);
+                        pixel_color +=
+                            self.ray_color(&r, self.max_depth, &thread_world, &thread_lights);
+                    }
+                }
                 progress.inc(1);
-                row_pixels
+                pixel_color
             })
             .collect();
 
