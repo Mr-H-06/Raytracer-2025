@@ -40,14 +40,14 @@ impl HitRecord {
     }
 }
 
-pub struct Translate {
-    object: Arc<dyn Hittable>,
+pub struct Translate<T: Hittable> {
+    object: T,
     offset: Vec3,
     bbox: Aabb,
 }
 
-impl Translate {
-    pub fn new(object: Arc<dyn Hittable>, offset: Vec3) -> Self {
+impl<T: Hittable> Translate<T> {
+    pub fn new(object: T, offset: Vec3) -> Self {
         let bbox = object.bounding_box() + offset;
         Self {
             object,
@@ -57,7 +57,7 @@ impl Translate {
     }
 }
 
-impl Hittable for Translate {
+impl<T: Hittable> Hittable for Translate<T> {
     fn hit(&self, r: &Ray, ray_t: &Interval, rec: &mut HitRecord) -> bool {
         let offset_r = Ray::new_with_time(r.origin() - self.offset, r.direction(), r.time());
 
@@ -75,15 +75,15 @@ impl Hittable for Translate {
     }
 }
 
-pub struct RotateY {
-    object: Arc<dyn Hittable>,
+pub struct RotateY<T: Hittable> {
+    object: T,
     sin_theta: f64,
     cos_theta: f64,
     bbox: Aabb,
 }
 
-impl RotateY {
-    pub fn new(p: Arc<dyn Hittable>, angle: f64) -> Self {
+impl<T: Hittable> RotateY<T> {
+    pub fn new(p: T, angle: f64) -> Self {
         let radians = angle.to_radians();
         let sin_theta = radians.sin();
         let cos_theta = radians.cos();
@@ -124,7 +124,7 @@ impl RotateY {
     }
 }
 
-impl Hittable for RotateY {
+impl<T: Hittable> Hittable for RotateY<T> {
     fn hit(&self, r: &Ray, ray_t: &Interval, rec: &mut HitRecord) -> bool {
         let mut origin = r.origin();
         let mut direction = r.direction();

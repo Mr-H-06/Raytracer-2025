@@ -2,12 +2,13 @@ use super::color::Color;
 use super::perlin::Perlin;
 use super::rtw_stb_image::RtwImage;
 use super::vec3::Point3;
-use std::sync::Arc;
+//use std::sync::Arc;
 
-pub trait Texture: Send + Sync {
+pub trait Texture: Send + Sync + Clone {
     fn value(&self, u: f64, v: f64, p: Point3) -> Color;
 }
 
+#[derive(Clone)]
 pub struct SolidColor {
     color_value: Color,
 }
@@ -29,31 +30,35 @@ impl Texture for SolidColor {
         self.color_value
     }
 }
-pub struct CheckerTexture {
+
+#[derive(Clone)]
+pub struct CheckerTexture<T: Texture> {
     inv_scale: f64,
-    even: Arc<dyn Texture>,
-    odd: Arc<dyn Texture>,
+    even: T,
+    odd: T,
 }
 
-impl CheckerTexture {
-    pub fn new(scale: f64, even: Arc<dyn Texture>, odd: Arc<dyn Texture>) -> Self {
+impl<T: Texture> CheckerTexture<T> {
+    pub fn new(scale: f64, even: T, odd: T) -> Self {
         Self {
             inv_scale: 1.0 / scale,
             even,
             odd,
         }
     }
+}
 
+impl CheckerTexture<SolidColor> {
     pub fn new_with_color(scale: f64, c1: Color, c2: Color) -> Self {
         Self {
             inv_scale: 1.0 / scale,
-            even: Arc::new(SolidColor::new(c1)),
-            odd: Arc::new(SolidColor::new(c2)),
+            even: SolidColor::new(c1),
+            odd: SolidColor::new(c2),
         }
     }
 }
 
-impl Texture for CheckerTexture {
+impl<T: Texture> Texture for CheckerTexture<T> {
     fn value(&self, u: f64, v: f64, p: Point3) -> Color {
         let x_integer = (self.inv_scale * p.x()).floor() as i32;
         let y_integer = (self.inv_scale * p.y()).floor() as i32;
@@ -69,6 +74,7 @@ impl Texture for CheckerTexture {
     }
 }
 
+#[derive(Clone)]
 pub struct ImageTexture {
     image: RtwImage,
 }
@@ -103,6 +109,7 @@ impl Texture for ImageTexture {
     }
 }
 
+#[derive(Clone)]
 pub struct NoiseTexture {
     noise: Perlin,
     scale: f64,

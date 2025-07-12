@@ -44,7 +44,7 @@ impl Camera {
     pub fn render(&mut self, world: Arc<dyn Hittable>, lights: Arc<dyn Hittable>) {
         self.initialize();
 
-        let path = std::path::Path::new("output/work/image1.png");
+        let path = std::path::Path::new("output/work/image3.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 

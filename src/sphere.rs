@@ -8,16 +8,17 @@ use crate::aabb::Aabb;
 use crate::interval::Interval;
 use std::sync::Arc;
 
-pub struct Sphere {
+#[derive(Clone)]
+pub struct Sphere<T: Material> {
     center: Ray,
     radius: f64,
-    mat: Arc<dyn Material>,
+    mat: T,
 
     bbox: Aabb,
 }
 
-impl Sphere {
-    pub fn new(static_center: Point3, radius: f64, material: Arc<dyn Material>) -> Self {
+impl<T: Material> Sphere<T> {
+    pub fn new(static_center: Point3, radius: f64, material: T) -> Self {
         let rvec = Vec3::new(radius, radius, radius);
         Self {
             center: Ray::new(static_center, Vec3::zero()),
@@ -28,12 +29,7 @@ impl Sphere {
         }
     }
 
-    pub fn new_with_center2(
-        center1: Point3,
-        center2: Point3,
-        radius: f64,
-        material: Arc<dyn Material>,
-    ) -> Self {
+    pub fn new_with_center2(center1: Point3, center2: Point3, radius: f64, material: T) -> Self {
         let rvec = Vec3::new(radius, radius, radius);
         let box1 = Aabb::new_with_point(&(center1 - rvec), &(center1 + rvec));
         let box2 = Aabb::new_with_point(&(center2 - rvec), &(center2 + rvec));
@@ -65,7 +61,7 @@ impl Sphere {
     }
 }
 
-impl Hittable for Sphere {
+impl<T: Material + Clone + 'static> Hittable for Sphere<T> {
     fn hit(&self, r: &Ray, ray_t: &Interval, hit_record: &mut HitRecord) -> bool {
         let current_center = self.center.at(r.time());
         let oc = current_center - r.origin();
@@ -92,7 +88,7 @@ impl Hittable for Sphere {
         let outward_normal = (hit_record.p - current_center) / self.radius;
         hit_record.set_face_normal(r, outward_normal);
         (hit_record.u, hit_record.v) = Self::get_sphere_uv(outward_normal);
-        hit_record.mat = Some(Arc::clone(&self.mat));
+        hit_record.mat = Some(Arc::new(self.mat.clone()) as Arc<dyn Material>);
 
         true
     }

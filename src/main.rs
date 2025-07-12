@@ -27,14 +27,14 @@ use crate::texture::{/*CheckerTexture,*/ ImageTexture, NoiseTexture /*, Texture*
 use crate::vec3::Vec3;
 use color::Color;
 use hittable_list::HittableList;
-use material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
+use material::{Dielectric, DiffuseLight, Lambertian, /*Material, */ Metal};
 use quad::Quad;
 use sphere::Sphere;
 use vec3::Point3;
 
 fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
     let mut boxes1 = HittableList::default();
-    let ground: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.48, 0.83, 0.53)));
+    let ground = Lambertian::new(Color::new(0.48, 0.83, 0.53));
 
     let boxes_per_side = 20;
     (0..boxes_per_side).for_each(|i| {
@@ -47,11 +47,11 @@ fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
             let y1 = rtweekend::random_double_range(1.0, 101.0);
             let z1 = z0 + w;
 
-            boxes1.add(quad::make_box(
+            boxes1.add(Arc::new(quad::make_box(
                 Point3::new(x0, y0, z0),
                 Point3::new(x1, y1, z1),
-                Arc::clone(&ground),
-            ));
+                ground.clone(),
+            )));
         });
     });
 
@@ -59,89 +59,75 @@ fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
 
     world.add(Arc::new(BvhNode::new(&mut boxes1)));
 
-    let light: Arc<dyn Material> =
-        Arc::new(DiffuseLight::new_with_color(Color::new(7.0, 7.0, 7.0)));
+    let light = DiffuseLight::new_with_color(Color::new(7.0, 7.0, 7.0));
     world.add(Arc::new(Quad::new(
         Point3::new(123.0, 554.0, 147.0),
         Vec3::new(300.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 265.0),
-        Arc::clone(&light),
+        light.clone(),
     )));
 
     let center1 = Point3::new(400.0, 400.0, 200.0);
     let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);
-    let sphere_material: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.1)));
+    let sphere_material = Lambertian::new(Color::new(0.7, 0.3, 0.1));
     world.add(Arc::new(Sphere::new_with_center2(
         center1,
         center2,
         50.0,
-        sphere_material,
+        sphere_material.clone(),
     )));
 
     world.add(Arc::new(Sphere::new(
         Point3::new(260.0, 150.0, 45.0),
         50.0,
-        Arc::new(Dielectric::new(1.5)),
+        Dielectric::new(1.5),
     )));
     world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 150.0, 145.0),
         50.0,
-        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)),
+        Metal::new(Color::new(0.8, 0.8, 0.9), 1.0),
     )));
 
-    let boundary: Arc<dyn hittable::Hittable> = Arc::new(Sphere::new(
-        Point3::new(360.0, 150.0, 145.0),
-        70.0,
-        Arc::new(Dielectric::new(1.5)),
-    ));
-    world.add(Arc::clone(&boundary));
+    let boundary = Sphere::new(Point3::new(360.0, 150.0, 145.0), 70.0, Dielectric::new(1.5));
+    world.add(Arc::new(boundary.clone()));
     world.add(Arc::new(constant_medium::ConstantMedium::new_with_color(
-        Arc::clone(&boundary),
+        boundary.clone(),
         0.2,
         Color::new(0.2, 0.4, 0.9),
     )));
-    let boundary: Arc<dyn hittable::Hittable> = Arc::new(Sphere::new(
-        Point3::new(0.0, 0.0, 0.0),
-        5000.0,
-        Arc::new(Dielectric::new(1.5)),
-    ));
+    let boundary = Sphere::new(Point3::new(0.0, 0.0, 0.0), 5000.0, Dielectric::new(1.5));
     world.add(Arc::new(constant_medium::ConstantMedium::new_with_color(
-        Arc::clone(&boundary),
+        boundary.clone(),
         0.0001,
         Color::new(1.0, 1.0, 1.0),
     )));
 
-    let emat: Arc<dyn Material> = Arc::new(Lambertian::new_with_texture(Arc::new(
-        ImageTexture::new("earthmap.jpg"),
-    )));
+    let emat = Lambertian::new_with_texture(ImageTexture::new("earthmap.jpg"));
     world.add(Arc::new(Sphere::new(
         Point3::new(400.0, 200.0, 400.0),
         100.0,
         emat,
     )));
-    let pertext = Arc::new(NoiseTexture::new(0.2));
+    let pertext = NoiseTexture::new(0.2);
     world.add(Arc::new(Sphere::new(
         Point3::new(220.0, 280.0, 300.0),
         80.0,
-        Arc::new(Lambertian::new_with_texture(pertext)),
+        Lambertian::new_with_texture(pertext),
     )));
 
     let mut boxes2 = HittableList::default();
-    let white: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let white = Lambertian::new(Color::new(0.73, 0.73, 0.73));
     let ns = 1000;
     (0..ns).for_each(|_| {
         boxes2.add(Arc::new(Sphere::new(
             Point3::random_range(0.0, 165.0),
             10.0,
-            Arc::clone(&white),
+            white.clone(),
         )));
     });
 
     world.add(Arc::new(hittable::Translate::new(
-        Arc::new(hittable::RotateY::new(
-            Arc::new(BvhNode::new(&mut boxes2)),
-            15.0,
-        )),
+        hittable::RotateY::new(BvhNode::new(&mut boxes2), 15.0),
         Vec3::new(-100.0, 270.0, 395.0),
     )));
 
@@ -152,6 +138,7 @@ fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
         Vec3::new(0.0, 0.0, 265.0),
         light,
     )));
+    //lights.add(boundary);
 
     let mut cam = Camera::default();
 
@@ -264,47 +251,46 @@ fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
 fn cornell_box() {
     let mut world = HittableList::default();
 
-    let red: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
-    let white: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
-    let green: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
-    let light: Arc<dyn Material> =
-        Arc::new(DiffuseLight::new_with_color(Color::new(15.0, 15.0, 15.0)));
+    let red = Lambertian::new(Color::new(0.65, 0.05, 0.05));
+    let white = Lambertian::new(Color::new(0.73, 0.73, 0.73));
+    let green = Lambertian::new(Color::new(0.12, 0.45, 0.15));
+    let light = DiffuseLight::new_with_color(Color::new(15.0, 15.0, 15.0));
 
     world.add(Arc::new(Quad::new(
         Point3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        green,
+        green.clone(),
     )));
     world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        red,
+        red.clone(),
     )));
     world.add(Arc::new(Quad::new(
         Point3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        Arc::clone(&light),
+        light.clone(),
     )));
     world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
-        Arc::clone(&white),
+        white.clone(),
     )));
     world.add(Arc::new(Quad::new(
         Point3::new(555.0, 555.0, 555.0),
         Vec3::new(-555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -555.0),
-        Arc::clone(&white),
+        white.clone(),
     )));
     world.add(Arc::new(Quad::new(
         Point3::new(0.0, 0.0, 555.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
-        Arc::clone(&white),
+        white.clone(),
     )));
     /*world.add(quad::make_box(
         Point3::new(130.0, 0.0, 65.0),
@@ -322,11 +308,11 @@ fn cornell_box() {
     let box1 = quad::make_box(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(165.0, 330.0, 165.0),
-        Arc::clone(&white),
+        white.clone(),
     );
-    let box1 = Arc::new(hittable::RotateY::new(box1, 15.0));
-    let box1 = Arc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
-    world.add(box1);
+    let box1 = hittable::RotateY::new(box1, 15.0);
+    let box1 = hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
+    world.add(Arc::new(box1));
     /*let box2 = quad::make_box(
         Point3::new(0.0, 0.0, 0.0),
         Vec3::new(165.0, 165.0, 165.0),
@@ -335,11 +321,11 @@ fn cornell_box() {
     let box2 = Arc::new(hittable::RotateY::new(box2, -18.0));
     let box2 = Arc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
     world.add(box2);*/
-    let glass: Arc<dyn Material> = Arc::new(Dielectric::new(1.5));
+    let glass = Dielectric::new(1.5);
     world.add(Arc::new(Sphere::new(
         Point3::new(190.0, 90.0, 190.0),
         90.0,
-        Arc::clone(&glass),
+        glass.clone(),
     )));
 
     let mut lights = HittableList::default();
@@ -347,13 +333,13 @@ fn cornell_box() {
         Point3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
-        Arc::clone(&light),
+        light.clone(),
     )));
 
     lights.add(Arc::new(Sphere::new(
         Point3::new(190.0, 90.0, 190.0),
         90.0,
-        Arc::clone(&glass),
+        glass.clone(),
     )));
 
     let mut cam = Camera::default();

@@ -8,20 +8,20 @@ use super::rtweekend;
 use super::vec3::{self, Point3, Vec3};
 use std::sync::Arc;
 
-pub struct Quad {
+pub struct Quad<T: Material> {
     q: Point3,
     u: Vec3,
     v: Vec3,
     w: Vec3,
     normal: Vec3,
     d: f64,
-    mat: Arc<dyn Material>,
+    mat: T,
     bbox: Aabb,
     area: f64,
 }
 
-impl Quad {
-    pub fn new(q: Point3, u: Vec3, v: Vec3, mat: Arc<dyn Material>) -> Self {
+impl<T: Material> Quad<T> {
+    pub fn new(q: Point3, u: Vec3, v: Vec3, mat: T) -> Self {
         let n = vec3::cross(u, v);
         let normal = vec3::unit_vector(n);
         let mut res = Self {
@@ -54,7 +54,7 @@ impl Quad {
     }
 }
 
-impl Hittable for Quad {
+impl<T: Material + Clone + 'static> Hittable for Quad<T> {
     fn hit(&self, r: &Ray, ray_t: &Interval, rec: &mut HitRecord) -> bool {
         let denom = vec3::dot(self.normal, r.direction);
 
@@ -76,7 +76,7 @@ impl Hittable for Quad {
 
         rec.t = t;
         rec.p = intersection;
-        rec.mat = Some(Arc::clone(&self.mat));
+        rec.mat = Some(Arc::new(self.mat.clone()));
         rec.set_face_normal(r, self.normal);
         true
     }
@@ -108,7 +108,7 @@ impl Hittable for Quad {
     }
 }
 
-pub fn make_box(a: Point3, b: Point3, mat: Arc<dyn Material>) -> Arc<HittableList> {
+pub fn make_box<T: Material + Clone + 'static>(a: Point3, b: Point3, mat: T) -> HittableList {
     // 返回一个包含两个对角顶点a和b的3D盒子（六个面）。
 
     let mut sides = HittableList::default();
@@ -125,38 +125,38 @@ pub fn make_box(a: Point3, b: Point3, mat: Arc<dyn Material>) -> Arc<HittableLis
         Point3::new(min.x(), min.y(), max.z()),
         dx,
         dy,
-        Arc::clone(&mat),
+        mat.clone(),
     )));
     sides.add(Arc::new(Quad::new(
         Point3::new(max.x(), min.y(), max.z()),
         -dz,
         dy,
-        Arc::clone(&mat),
+        mat.clone(),
     )));
     sides.add(Arc::new(Quad::new(
         Point3::new(max.x(), min.y(), min.z()),
         -dx,
         dy,
-        Arc::clone(&mat),
+        mat.clone(),
     )));
     sides.add(Arc::new(Quad::new(
         Point3::new(min.x(), min.y(), min.z()),
         dz,
         dy,
-        Arc::clone(&mat),
+        mat.clone(),
     )));
     sides.add(Arc::new(Quad::new(
         Point3::new(min.x(), max.y(), max.z()),
         dx,
         -dz,
-        Arc::clone(&mat),
+        mat.clone(),
     )));
     sides.add(Arc::new(Quad::new(
         Point3::new(min.x(), min.y(), min.z()),
         dx,
         dz,
-        Arc::clone(&mat),
+        mat.clone(),
     )));
 
-    Arc::new(sides)
+    sides
 }

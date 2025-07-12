@@ -7,33 +7,36 @@ use super::interval::{self, Interval};
 use super::material::{Isotropic, Material};
 use super::ray::Ray;
 use super::rtweekend;
-use super::texture::Texture;
+use super::texture::{SolidColor, Texture};
 use super::vec3::Vec3;
 
-pub struct ConstantMedium {
-    boundary: Arc<dyn Hittable>,
+pub struct ConstantMedium<H: Hittable, M: Material> {
+    boundary: H,
     neg_inv_density: f64,
-    phase_function: Arc<dyn Material>,
+    phase_function: M,
 }
 
-impl ConstantMedium {
-    pub fn new(b: Arc<dyn Hittable>, d: f64, a: Arc<dyn Texture>) -> Self {
+impl<H: Hittable + 'static, T: Texture + 'static> ConstantMedium<H, Isotropic<T>> {
+    pub fn new(b: H, d: f64, a: T) -> Self {
         Self {
             boundary: b,
             neg_inv_density: -1.0 / d,
-            phase_function: Arc::new(Isotropic::new(a)),
-        }
-    }
-    pub fn new_with_color(b: Arc<dyn Hittable>, d: f64, c: Color) -> Self {
-        Self {
-            boundary: b,
-            neg_inv_density: -1.0 / d,
-            phase_function: Arc::new(Isotropic::new_with_color(c)),
+            phase_function: Isotropic::new(a),
         }
     }
 }
 
-impl Hittable for ConstantMedium {
+impl<H: Hittable + 'static> ConstantMedium<H, Isotropic<SolidColor>> {
+    pub fn new_with_color(b: H, d: f64, c: Color) -> Self {
+        Self {
+            boundary: b,
+            neg_inv_density: -1.0 / d,
+            phase_function: Isotropic::new_with_color(c),
+        }
+    }
+}
+
+impl<H: Hittable + 'static, T: Texture + 'static> Hittable for ConstantMedium<H, Isotropic<T>> {
     fn hit(&self, r: &Ray, ray_t: &Interval, rec: &mut HitRecord) -> bool {
         // Print occasional samples when debugging. To enable, set enableDebug true.
         const ENABLE_DEBUG: bool = false;
@@ -92,7 +95,7 @@ impl Hittable for ConstantMedium {
 
         rec.normal = Vec3::new(1.0, 0.0, 0.0); // arbitrary
         rec.front_face = true; // also arbitrary
-        rec.mat = Some(Arc::clone(&self.phase_function));
+        rec.mat = Some(Arc::new(self.phase_function.clone()));
 
         true
     }

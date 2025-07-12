@@ -3,6 +3,7 @@ use super::vec3::{self, Point3, Vec3};
 
 const POINT_COUNT: usize = 256;
 
+#[derive(Clone)]
 pub struct Perlin {
     //ranfloat: [f64; POINT_COUNT],
     randvec: [Vec3; POINT_COUNT],
