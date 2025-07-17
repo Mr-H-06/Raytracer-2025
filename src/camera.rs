@@ -44,7 +44,7 @@ impl Camera {
     pub fn render(&mut self, world: Arc<dyn Hittable>, lights: Arc<dyn Hittable>) {
         self.initialize();
 
-        let path = std::path::Path::new("output/work/image3.png");
+        let path = std::path::Path::new("output/work/image9.png");
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -63,7 +63,6 @@ impl Camera {
         let pixels: Vec<Color> = pixel_coords
             .into_par_iter()
             .map(|(i, j)| {
-                // Arc::clone 只需克隆一次，因为每个任务只处理一个像素
                 let thread_world = Arc::clone(&world);
                 let thread_lights = Arc::clone(&lights);
 
@@ -110,7 +109,6 @@ impl Camera {
 
         self.center = self.lookfrom;
 
-        // 确认视口的大小。
         let theta = rtweekend::degrees_to_radians(self.vfov);
         let h = (theta / 2.0).tan();
         let viewport_height = 2.0 * h * self.focus_dist;

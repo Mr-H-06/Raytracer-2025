@@ -8,6 +8,7 @@ pub mod hittable;
 pub mod hittable_list;
 pub mod interval;
 pub mod material;
+pub mod model;
 pub mod onb;
 pub mod pdf;
 pub mod perlin;
@@ -17,20 +18,23 @@ pub mod rtw_stb_image;
 pub mod rtweekend;
 pub mod sphere;
 pub mod texture;
+pub mod triangle;
 pub mod vec3;
 
 use std::sync::Arc;
 
+//use crate::model::load_model;
 use crate::bvh::BvhNode;
 use crate::camera::Camera;
-use crate::texture::{/*CheckerTexture,*/ ImageTexture, NoiseTexture /*, Texture*/};
-use crate::vec3::Vec3;
+use crate::hittable::{Hittable, RotateX, RotateY, Scale, Translate};
+use crate::model::load_model;
+use crate::texture::{ImageTexture, NoiseTexture};
+use crate::vec3::{Point3, Vec3};
 use color::Color;
 use hittable_list::HittableList;
-use material::{Dielectric, DiffuseLight, Lambertian, /*Material, */ Metal};
+use material::{Dielectric, DiffuseLight, Lambertian, Metal};
 use quad::Quad;
 use sphere::Sphere;
-use vec3::Point3;
 
 fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
     let mut boxes1 = HittableList::default();
@@ -115,7 +119,7 @@ fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
         Lambertian::new_with_texture(pertext),
     )));
 
-    let mut boxes2 = HittableList::default();
+    /*let mut boxes2 = HittableList::default();
     let white = Lambertian::new(Color::new(0.73, 0.73, 0.73));
     let ns = 1000;
     (0..ns).for_each(|_| {
@@ -129,7 +133,7 @@ fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
     world.add(Arc::new(hittable::Translate::new(
         hittable::RotateY::new(BvhNode::new(&mut boxes2), 15.0),
         Vec3::new(-100.0, 270.0, 395.0),
-    )));
+    )));*/
 
     let mut lights = HittableList::default();
     lights.add(Arc::new(Quad::new(
@@ -158,511 +162,287 @@ fn final_scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
     cam.render(Arc::new(world), Arc::new(lights));
 }
 
-/*fn cornell_smoke() {
-    let mut world = HittableList::default();
+fn attempt(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
+    let mut world = HittableList::new();
 
-    let red: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
-    let white: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
-    let green: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
-    let light: Arc<dyn Material> = Arc::new(DiffuseLight::new_with_color(Color::new(7.0, 7.0, 7.0)));
-
+    //let ground = Lambertian::new_with_texture(ImageTexture::new("wood.jpg"));
     world.add(Arc::new(Quad::new(
-        Point3::new(555.0, 0.0, 0.0),
-        Vec3::new(0.0, 555.0, 0.0),
-        Vec3::new(0.0, 0.0, 555.0),
-        green,
+        Point3::new(-2.0, 0.0, 2.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -4.0),
+        Lambertian::new(Color::new(0.2, 0.2, 0.2)), //ground
     )));
     world.add(Arc::new(Quad::new(
-        Point3::new(0.0, 0.0, 0.0),
-        Vec3::new(0.0, 555.0, 0.0),
-        Vec3::new(0.0, 0.0, 555.0),
-        red,
+        Point3::new(-2.0, 0.0, -1.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Lambertian::new(Color::new(0.8, 0.8, 0.7)), //wall
     )));
     world.add(Arc::new(Quad::new(
-        Point3::new(113.0, 554.0, 127.0),
-        Vec3::new(330.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 305.0),
-        light,
+        Point3::new(-2.0, 0.0, 2.0),
+        Vec3::new(0.0, 0.0, -4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Dielectric::new(1.5), //left
     )));
     world.add(Arc::new(Quad::new(
-        Point3::new(0.0, 555.0, 0.0),
-        Vec3::new(555.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 555.0),
-        Arc::clone(&white),
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(0.0, 0.0, 0.0),
-        Vec3::new(555.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 555.0),
-        Arc::clone(&white),
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(0.0, 0.0, 555.0),
-        Vec3::new(555.0, 0.0, 0.0),
-        Vec3::new(0.0, 555.0, 0.0),
-        Arc::clone(&white),
+        Point3::new(2.0, 0.0, -2.0),
+        Vec3::new(0.0, 0.0, 4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Dielectric::new(1.5), //right
     )));
 
-    let box1 = quad::make_box(
-        Point3::new(0.0, 0.0, 0.0),
-        Vec3::new(165.0, 330.0, 165.0),
-        Arc::clone(&white),
+    let model_material = Lambertian::new(Color::new(0.8, 0.85, 0.9));
+    let mut model_triangles = load_model("images/2/week_6.obj", model_material);
+    let model_bvh = BvhNode::new(&mut model_triangles);
+
+    let target_factor = 8.0;
+    let scaled_model = Scale::new(
+        model_bvh,
+        Vec3::new(target_factor, target_factor, target_factor),
     );
-    let box1 = Arc::new(hittable::RotateY::new(box1, 15.0));
-    let box1 = Arc::new(hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
+    let rotated_model = RotateY::new(scaled_model, 30.0);
+    let final_bbox = rotated_model.bounding_box();
+    let target_position = Point3::new(2.5, 0.0, 2.5);
+    let translation_vec = target_position
+        - Vec3::new(
+            (final_bbox.x.min + final_bbox.x.max) / 2.0,
+            final_bbox.y.min,
+            (final_bbox.z.min + final_bbox.z.max) / 2.0,
+        );
+    let final_model = Translate::new(rotated_model, translation_vec);
+    world.add(Arc::new(final_model));
 
-    let box2 = quad::make_box(
-        Point3::new(0.0, 0.0, 0.0),
-        Vec3::new(165.0, 165.0, 165.0),
-        Arc::clone(&white),
-    );
-    let box2 = Arc::new(hittable::RotateY::new(box2, -18.0));
-    let box2 = Arc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
-
-    world.add(Arc::new(constant_medium::ConstantMedium::new_with_color(
-        box1,
-        0.01,
-        Color::new(0.0, 0.0, 0.0),
-    )));
-    world.add(Arc::new(constant_medium::ConstantMedium::new_with_color(
-        box2,
-        0.01,
-        Color::new(1.0, 1.0, 1.0),
-    )));
-
-    let mut cam = Camera::default();
-
-    cam.aspect_ratio = 1.0;
-    cam.image_width = 600;
-    cam.samples_per_pixel = 200;
-    cam.max_depth = 50;
-    cam.background = Color::default();
-
-    cam.vfov = 40.0;
-    cam.lookfrom = Point3::new(278.0, 278.0, -800.0);
-    cam.lookat = Point3::new(278.0, 278.0, 0.0);
-    cam.vup = Vec3::new(0.0, 1.0, 0.0);
-
-    cam.defocus_angle = 0.0;
-
-    cam.render(&world);
-}*/
-
-fn cornell_box() {
-    let mut world = HittableList::default();
-
-    let red = Lambertian::new(Color::new(0.65, 0.05, 0.05));
-    let white = Lambertian::new(Color::new(0.73, 0.73, 0.73));
-    let green = Lambertian::new(Color::new(0.12, 0.45, 0.15));
-    let light = DiffuseLight::new_with_color(Color::new(15.0, 15.0, 15.0));
+    let light_material = DiffuseLight::new_with_color(Color::new(10.0, 10.0, 10.0));
 
     world.add(Arc::new(Quad::new(
-        Point3::new(555.0, 0.0, 0.0),
-        Vec3::new(0.0, 555.0, 0.0),
-        Vec3::new(0.0, 0.0, 555.0),
-        green.clone(),
+        Point3::new(-0.5, 3.0, -0.5),
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 1.0),
+        light_material.clone(),
     )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(0.0, 0.0, 0.0),
-        Vec3::new(0.0, 555.0, 0.0),
-        Vec3::new(0.0, 0.0, 555.0),
-        red.clone(),
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(343.0, 554.0, 332.0),
-        Vec3::new(-130.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -105.0),
-        light.clone(),
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(0.0, 0.0, 0.0),
-        Vec3::new(555.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 555.0),
-        white.clone(),
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(555.0, 555.0, 555.0),
-        Vec3::new(-555.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -555.0),
-        white.clone(),
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(0.0, 0.0, 555.0),
-        Vec3::new(555.0, 0.0, 0.0),
-        Vec3::new(0.0, 555.0, 0.0),
-        white.clone(),
-    )));
-    /*world.add(quad::make_box(
-        Point3::new(130.0, 0.0, 65.0),
-        Point3::new(295.0, 165.0, 230.0),
-        Arc::clone(&white),
-    ));
-    world.add(quad::make_box(
-        Point3::new(265.0, 0.0, 295.0),
-        Point3::new(430.0, 330.0, 460.0),
-        Arc::clone(&white),
-    ));*/
-
-    /*let aluminum: Arc<dyn Material> =
-    Arc::new(material::Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));*/
-    let box1 = quad::make_box(
-        Point3::new(0.0, 0.0, 0.0),
-        Vec3::new(165.0, 330.0, 165.0),
-        white.clone(),
-    );
-    let box1 = hittable::RotateY::new(box1, 15.0);
-    let box1 = hittable::Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
-    world.add(Arc::new(box1));
-    /*let box2 = quad::make_box(
-        Point3::new(0.0, 0.0, 0.0),
-        Vec3::new(165.0, 165.0, 165.0),
-        Arc::clone(&white),
-    );
-    let box2 = Arc::new(hittable::RotateY::new(box2, -18.0));
-    let box2 = Arc::new(hittable::Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
-    world.add(box2);*/
-    let glass = Dielectric::new(1.5);
-    world.add(Arc::new(Sphere::new(
-        Point3::new(190.0, 90.0, 190.0),
-        90.0,
-        glass.clone(),
-    )));
-
     let mut lights = HittableList::default();
     lights.add(Arc::new(Quad::new(
-        Point3::new(343.0, 554.0, 332.0),
-        Vec3::new(-130.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -105.0),
-        light.clone(),
-    )));
-
-    lights.add(Arc::new(Sphere::new(
-        Point3::new(190.0, 90.0, 190.0),
-        90.0,
-        glass.clone(),
+        Point3::new(-0.5, 3.0, -0.5),
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 1.0),
+        light_material.clone(),
     )));
 
     let mut cam = Camera::default();
 
-    cam.aspect_ratio = 1.0;
-    cam.image_width = 600;
-    cam.samples_per_pixel = 1000;
-    cam.max_depth = 50;
-    cam.background = Color::default();
+    cam.aspect_ratio = 16.0 / 9.0;
+    cam.image_width = image_width;
+    cam.samples_per_pixel = samples_per_pixel;
+    cam.max_depth = max_depth;
+    cam.background = Color::new(0.35, 0.4, 0.5);
 
-    cam.vfov = 40.0;
-    cam.lookfrom = Point3::new(278.0, 278.0, -800.0);
-    cam.lookat = Point3::new(278.0, 278.0, 0.0);
+    cam.vfov = 28.0;
+    cam.lookfrom = Point3::new(0.0, 1.5, 4.0);
+    cam.lookat = Point3::new(0.0, 0.5, 0.0);
     cam.vup = Vec3::new(0.0, 1.0, 0.0);
 
-    cam.defocus_angle = 0.0;
+    cam.defocus_angle = 0.5;
+    cam.focus_dist = (cam.lookfrom - cam.lookat).length();
 
     cam.render(Arc::new(world), Arc::new(lights));
 }
-/*fn simple_light() {
-    let mut world = HittableList::default();
 
-    let pertext: Arc<dyn Texture> = Arc::new(NoiseTexture::new(4.0));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, -1000.0, 0.0),
-        1000.0,
-        Arc::new(Lambertian::new_with_texture(Arc::clone(&pertext))),
-    )));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, 2.0, 0.0),
-        2.0,
-        Arc::new(Lambertian::new_with_texture(pertext)),
-    )));
+fn scene(image_width: u32, samples_per_pixel: usize, max_depth: i32) {
+    let mut world = HittableList::new();
+    let mut lights = HittableList::default();
 
-    let difflight: Arc<dyn Material> =
-        Arc::new(DiffuseLight::new_with_color(Color::new(4.0, 4.0, 4.0)));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, 7.0, 0.0),
-        2.0,
-        Arc::clone(&difflight),
-    )));
+    let ground = Lambertian::new_with_texture(ImageTexture::new("wood.jpg"));
     world.add(Arc::new(Quad::new(
-        Point3::new(3.0, 1.0, -2.0),
-        Vec3::new(2.0, 0.0, 0.0),
-        Vec3::new(0.0, 2.0, 0.0),
-        difflight,
-    )));
-
-    let mut cam = Camera::default();
-
-    cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 400;
-    cam.samples_per_pixel = 100;
-    cam.max_depth = 50;
-    cam.background = Color::default();
-
-    cam.vfov = 20.0;
-    cam.lookfrom = Point3::new(26.0, 3.0, 6.0);
-    cam.lookat = Point3::new(0.0, 2.0, 0.0);
-    cam.vup = Vec3::new(0.0, 1.0, 0.0);
-
-    cam.defocus_angle = 0.0;
-
-    cam.render(&world);
-}
-
-fn quads() {
-    let mut world = HittableList::default();
-
-    // Material
-    let left_red: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(1.0, 0.2, 0.2)));
-    let back_green: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.2, 1.0, 0.2)));
-    let right_blue: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.2, 0.2, 1.0)));
-    let upper_orange: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(1.0, 0.5, 0.0)));
-    let lower_teal: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.2, 0.8, 0.8)));
-
-    // Quad
-    world.add(Arc::new(Quad::new(
-        Point3::new(-3.0, -2.0, 5.0),
-        Vec3::new(0.0, 0.0, -4.0),
-        Vec3::new(0.0, 4.0, 0.0),
-        left_red,
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(-2.0, -2.0, 0.0),
-        Vec3::new(4.0, 0.0, 0.0),
-        Vec3::new(0.0, 4.0, 0.0),
-        back_green,
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(3.0, -2.0, 1.0),
-        Vec3::new(0.0, 0.0, 4.0),
-        Vec3::new(0.0, 4.0, 0.0),
-        right_blue,
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(-2.0, 3.0, 1.0),
-        Vec3::new(4.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, 4.0),
-        upper_orange,
-    )));
-    world.add(Arc::new(Quad::new(
-        Point3::new(-2.0, -3.0, 5.0),
+        Point3::new(-2.0, 0.0, 2.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -4.0),
-        lower_teal,
+        ground,
+        //Lambertian::new(Color::new(0.2, 0.2, 0.2)), //ground
     )));
 
-    let mut cam = Camera::default();
+    let wall = Lambertian::new_with_texture(ImageTexture::new("back.jpg"));
+    world.add(Arc::new(Quad::new(
+        Point3::new(-2.0, 0.0, -2.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        wall,
+        //Lambertian::new(Color::new(0.2, 0.2, 0.2)), //wall
+    )));
+    /*lights.add(Arc::new(Quad::new(
+        Point3::new(-2.0, 0.0, -1.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Metal::new(Color::new(1.0, 1.0, 1.0), 0.2), //wall
+    )));*/
 
-    cam.aspect_ratio = 1.0;
-    cam.image_width = 400;
-    cam.samples_per_pixel = 100;
-    cam.max_depth = 50;
-    cam.background = Color::new(0.7, 0.8, 1.0);
+    world.add(Arc::new(Quad::new(
+        Point3::new(-2.0, 0.0, 2.0),
+        Vec3::new(0.0, 0.0, -4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Dielectric::new(1.5), //left
+    )));
+    world.add(Arc::new(Quad::new(
+        Point3::new(2.0, 0.0, -2.0),
+        Vec3::new(0.0, 0.0, 4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Dielectric::new(1.5), //right
+    )));
+    //--------------------------------------------------------------------------
+    let model_material = Lambertian::new(Color::new(0.8, 0.85, 0.9));
+    let mut model_triangles = load_model("images/2/week_6.obj", model_material);
+    let model_bvh = BvhNode::new(&mut model_triangles);
+    let target_factor = 10.0;
+    let scaled_model = Scale::new(
+        model_bvh,
+        Vec3::new(target_factor, target_factor, target_factor),
+    );
+    let rotated_model = RotateY::new(scaled_model, 30.0);
 
-    cam.vfov = 80.0;
-    cam.lookfrom = Point3::new(0.0, 0.0, 9.0);
-    cam.lookat = Point3::new(0.0, 0.0, 0.0);
-    cam.vup = Vec3::new(0.0, 1.0, 0.0);
+    let final_bbox = rotated_model.bounding_box();
+    let target_position = Point3::new(-1.3, -0.55, -1.3);
+    let translation_vec = target_position
+        - Vec3::new(
+            (final_bbox.x.min + final_bbox.x.max) / 2.0,
+            final_bbox.y.min,
+            (final_bbox.z.min + final_bbox.z.max) / 2.0,
+        );
+    let final_model = Translate::new(rotated_model, translation_vec);
+    world.add(Arc::new(final_model));
+    //--------------------------------------------------------------------------
+    let model_material = Lambertian::new(Color::new(0.8, 0.85, 0.9));
+    let mut model_triangles = load_model("images/3/Cactus.obj", model_material);
+    let model_bvh = BvhNode::new(&mut model_triangles);
+    let target_factor = 0.11;
+    let scaled_model = Scale::new(
+        model_bvh,
+        Vec3::new(target_factor, target_factor, target_factor),
+    );
+    let rotated_model = RotateX::new(scaled_model, 90.0);
+    let rotated_model = RotateY::new(rotated_model, 55.0);
 
-    cam.defocus_angle = 0.0;
+    let final_bbox = rotated_model.bounding_box();
+    let target_position = Point3::new(1.7, -0.3, -1.3);
+    let translation_vec = target_position
+        - Vec3::new(
+            (final_bbox.x.min + final_bbox.x.max) / 2.0,
+            final_bbox.y.min,
+            (final_bbox.z.min + final_bbox.z.max) / 2.0,
+        );
+    let final_model = Translate::new(rotated_model, translation_vec);
+    world.add(Arc::new(final_model));
+    //--------------------------------------------------------------------------
+    let model_material = Lambertian::new(Color::new(0.8, 0.85, 0.9));
+    let mut model_triangles = load_model("images/4/coke.obj", model_material);
+    let model_bvh = BvhNode::new(&mut model_triangles);
+    let target_factor = 0.1;
+    let scaled_model = Scale::new(
+        model_bvh,
+        Vec3::new(target_factor, target_factor, target_factor),
+    );
+    let rotated_model = RotateY::new(scaled_model, -25.0);
 
-    cam.render(&world);
-}
+    let final_bbox = rotated_model.bounding_box();
+    let target_position = Point3::new(1.5, 0.2, 0.4);
+    let translation_vec = target_position
+        - Vec3::new(
+            (final_bbox.x.min + final_bbox.x.max) / 2.0,
+            final_bbox.y.min,
+            (final_bbox.z.min + final_bbox.z.max) / 2.0,
+        );
+    let final_model = Translate::new(rotated_model, translation_vec);
+    world.add(Arc::new(final_model));
+    //--------------------------------------------------------------------------
+    let model_material = Lambertian::new(Color::new(0.8, 0.85, 0.9));
+    let mut model_triangles = load_model("images/4/coke.obj", model_material);
+    let model_bvh = BvhNode::new(&mut model_triangles);
+    let target_factor = 0.1;
+    let scaled_model = Scale::new(
+        model_bvh,
+        Vec3::new(target_factor, target_factor, target_factor),
+    );
+    let rotated_model = RotateY::new(scaled_model, 25.0);
 
-fn perlin_spheres() {
-    let mut world = HittableList::default();
+    let final_bbox = rotated_model.bounding_box();
+    let target_position = Point3::new(1.3, 0.2, 0.2);
+    let translation_vec = target_position
+        - Vec3::new(
+            (final_bbox.x.min + final_bbox.x.max) / 2.0,
+            final_bbox.y.min,
+            (final_bbox.z.min + final_bbox.z.max) / 2.0,
+        );
+    let final_model = Translate::new(rotated_model, translation_vec);
+    world.add(Arc::new(final_model));
+    //--------------------------------------------------------------------------
+    let model_material = Lambertian::new(Color::new(0.8, 0.85, 0.9));
+    let mut model_triangles = load_model("images/5/6.obj", model_material);
+    let model_bvh = BvhNode::new(&mut model_triangles);
 
-    let pertext: Arc<dyn Texture> = Arc::new(NoiseTexture::new(4.0));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, -1000.0, 0.0),
-        1000.0,
-        Arc::new(Lambertian::new_with_texture(Arc::clone(&pertext))),
+    let target_factor = 0.004;
+    let scaled_model = Scale::new(
+        model_bvh,
+        Vec3::new(target_factor, target_factor, target_factor),
+    );
+    let rotated_model = scaled_model; //RotateY::new(scaled_model, -25.0);
+
+    let final_bbox = rotated_model.bounding_box();
+    let target_position = Point3::new(0.08, -0.8, 0.05);
+    let translation_vec = target_position
+        - Vec3::new(
+            (final_bbox.x.min + final_bbox.x.max) / 2.0,
+            final_bbox.y.min,
+            (final_bbox.z.min + final_bbox.z.max) / 2.0,
+        );
+    let final_model = Translate::new(rotated_model, translation_vec);
+    world.add(Arc::new(final_model));
+
+    world.add(Arc::new(quad::make_box(
+        Point3::new(-1.6, 0.0, 0.5),
+        Point3::new(-1.3, 0.3, 0.2),
+        Metal::new(Color::new(0.4, 0.4, 0.45), 0.0),
+        //Lambertian::new(Color::new(0.1, 0.2, 0.5)),
     )));
     world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, 2.0, 0.0),
-        2.0,
-        Arc::new(Lambertian::new_with_texture(Arc::clone(&pertext))),
+        Point3::new(-1.45, 0.5, 0.35),
+        0.2,
+        Dielectric::new(1.4),
     )));
+    let light_material = DiffuseLight::new_with_color(Color::new(10.0, 10.0, 10.0));
 
-    let mut cam = Camera::default();
-
-    cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 400;
-    cam.samples_per_pixel = 100;
-    cam.max_depth = 50;
-    cam.background = Color::new(0.7, 0.8, 1.0);
-
-    cam.vfov = 20.0;
-    cam.lookfrom = Point3::new(13.0, 2.0, 3.0);
-    cam.lookat = Point3::new(0.0, 0.0, 0.0);
-    cam.vup = Vec3::new(0.0, 1.0, 0.0);
-
-    cam.defocus_angle = 0.0;
-
-    cam.render(&world);
-}
-
-fn earth() {
-    let earth_texture: Arc<dyn Texture> = Arc::new(ImageTexture::new("earthmap.jpg"));
-    let earth_surface: Arc<dyn Material> =
-        Arc::new(Lambertian::new_with_texture(Arc::clone(&earth_texture)));
-    let globe = Arc::new(Sphere::new(Point3::new(0.0, 0.0, 0.0), 2.0, earth_surface));
-
-    let mut cam = Camera::default();
-
-    cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 400;
-    cam.samples_per_pixel = 100;
-    cam.max_depth = 50;
-    cam.background = Color::new(0.7, 0.8, 1.0);
-
-    cam.vfov = 20.0;
-    cam.lookfrom = Point3::new(0.0, 0.0, 12.0);
-    cam.lookat = Point3::new(0.0, 0.0, 0.0);
-    cam.vup = Vec3::new(0.0, 1.0, 0.0);
-
-    cam.defocus_angle = 0.0;
-
-    cam.render(&HittableList::new_with_object(globe));
-}
-
-fn bouncing_spheres() {
-    // World
-    let mut world = HittableList::default();
-
-    let ground_material: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, -1000.0, 0.0),
-        1000.0,
-        ground_material,
+    world.add(Arc::new(Quad::new(
+        Point3::new(-0.5, 3.0, -0.5),
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 1.0),
+        light_material.clone(),
     )));
-
-    for a in -11..11 {
-        for b in -11..11 {
-            let choose_mat = rtweekend::random_double();
-            let center = Point3::new(
-                a as f64 + 0.9 * rtweekend::random_double(),
-                0.2,
-                b as f64 + 0.9 * rtweekend::random_double(),
-            );
-
-            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                let mut center2 = center;
-                let sphere_material: Arc<dyn Material> = if choose_mat < 0.8 {
-                    center2 =
-                        center + Vec3::new(0.0, rtweekend::random_double_range(0.0, 0.5), 0.0);
-                    // diffuse
-                    let albedo = Color::random() * Color::random();
-                    Arc::new(Lambertian::new(albedo))
-                } else if choose_mat < 0.95 {
-                    // metal
-                    let albedo = Color::random_range(0.5, 1.0);
-                    let fuzz = rtweekend::random_double_range(0.0, 0.5);
-                    Arc::new(Metal::new(albedo, fuzz))
-                } else {
-                    // glass
-                    Arc::new(Dielectric::new(1.5))
-                };
-                world.add(Arc::new(Sphere::new_with_center2(
-                    center,
-                    center2,
-                    0.2,
-                    sphere_material,
-                )));
-            }
-        }
-    }
-
-    let material1: Arc<dyn Material> = Arc::new(Dielectric::new(1.5));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, 1.0, 0.0),
-        1.0,
-        material1,
-    )));
-
-    let material2: Arc<dyn Material> = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(-4.0, 1.0, 0.0),
-        1.0,
-        material2,
-    )));
-
-    let material3: Arc<dyn Material> = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(4.0, 1.0, 0.0),
-        1.0,
-        material3,
-    )));
-
-    let world = HittableList::new_with_object(Arc::new(BvhNode::new(&mut world)));
-
-    // Camera
-    let mut cam = Camera::default();
-    cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 400;
-    cam.samples_per_pixel = 100;
-    cam.max_depth = 50;
-
-    cam.vfov = 20.0;
-    cam.lookfrom = Point3::new(13.0, 2.0, 3.0);
-    cam.lookat = Point3::new(0.0, 0.0, 0.0);
-    cam.vup = Vec3::new(0.0, 1.0, 0.0);
-
-    cam.defocus_angle = 0.6;
-    cam.focus_dist = 10.0;
-
-    // Render
-    cam.render(&world);
-}
-
-fn checkered_spheres() {
-    let mut world = HittableList::default();
-
-    let checker: Arc<dyn Texture> = Arc::new(CheckerTexture::new_with_color(
-        0.32,
-        Color::new(0.2, 0.3, 0.1),
-        Color::new(0.9, 0.9, 0.9),
-    ));
-
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, -10.0, 0.0),
-        10.0,
-        Arc::new(Lambertian::new_with_texture(Arc::clone(&checker))),
-    )));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, 10.0, 0.0),
-        10.0,
-        Arc::new(Lambertian::new_with_texture(Arc::clone(&checker))),
+    lights.add(Arc::new(Quad::new(
+        Point3::new(-0.5, 3.0, -0.5),
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 1.0),
+        light_material.clone(),
     )));
 
     let mut cam = Camera::default();
 
     cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 400;
-    cam.samples_per_pixel = 50;
-    cam.max_depth = 10;
+    cam.image_width = image_width;
+    cam.samples_per_pixel = samples_per_pixel;
+    cam.max_depth = max_depth;
+    cam.background = Color::new(0.21, 0.27, 0.31);
 
-    cam.vfov = 20.0;
-    cam.lookfrom = Point3::new(13.0, 2.0, 3.0);
-    cam.lookat = Point3::new(0.0, 0.0, 0.0);
+    cam.vfov = 28.0;
+    cam.lookfrom = Point3::new(0.0, 1.5, 4.0);
+    cam.lookat = Point3::new(0.0, 0.5, 0.0);
     cam.vup = Vec3::new(0.0, 1.0, 0.0);
 
-    cam.defocus_angle = 0.0;
+    cam.defocus_angle = 0.5;
+    cam.focus_dist = (cam.lookfrom - cam.lookat).length();
 
-    cam.render(&world);
-}*/
+    cam.render(Arc::new(world), Arc::new(lights));
+}
 
 fn main() {
-    /*
-    match 7 {
-        1 => bouncing_spheres(),
-        2 => checkered_spheres(),
-        3 => earth(),
-        4 => perlin_spheres(),
-        5 => quads(),
-        6 => simple_light(),
-        7 => cornell_box(),
-        8 => cornell_smoke(),
-        9 => final_scene(400, 300, 5),
-        _ => final_scene(400, 250, 4),
-    }*/
-    final_scene(800, 2000, 40);
-    //cornell_box();
+    scene(600, 300, 20);
+    //attempt(400, 100, 10);
+    //attempt(800, 500, 50);
+    //final_scene(800, 100, 10);
 }
